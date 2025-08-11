@@ -1,93 +1,73 @@
 // src/routes/game/dashboard.tsx
-import { createAsync, redirect } from "@solidjs/router";
-import { getRequestEvent } from "solid-js/web";
-import { Show } from "solid-js";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import type { Database } from "~/types/supabase";
+import { createAsync } from "@solidjs/router";
+import { Show, onMount, Suspense, type Component } from "solid-js";
+import { getGameData } from "~/lib/game-actions"; // Importiamo la nostra azione
+import StatsCard from "~/components/game/dashboard/StatsCard"; // Importiamo il nostro componente UI
+import { animate, stagger } from "motion"; // Importiamo le funzioni di animazione
+import type { Tables } from "~/types/supabase";
+import Loader from "~/components/ui/Loader";
 
-// 1. Creiamo una funzione server più potente per prendere tutti i dati di gioco.
-const getGameData = async () => {
-  "use server";
-  const event = getRequestEvent();
+type ProfileData = Tables<'profiles'> & { planets: Tables<'planets'>[] };
 
-  // Se l'utente non è in locals, il middleware ha già reindirizzato,
-  // ma questo è un controllo di sicurezza extra.
-  if (!event?.locals.user) {
-    throw redirect("/login");
-  }
+{/* DASHBOARD VIEW COMPONENT */}
+const DashboardView: Component<{ profile: ProfileData }> = (props) => {
+  onMount(() => {
+    const keyframes: Record<string, any> = {
+      opacity: [0, 1],
+      transform: ["translateY(10px)", "translateY(0px)"],
+    };
 
-  // Creiamo un client Supabase sul server
-  const supabase = createServerClient<Database>(
-    import.meta.env.VITE_SUPABASE_URL!,
-    import.meta.env.VITE_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(key: string) {
-          return event.request.headers.get("cookie")?.split('; ').find(c => c.startsWith(key + '='))?.split('=')[1];
-        },
-        set(key: string, value: string, options: CookieOptions) {
-          event.response.headers.append("Set-Cookie", `${key}=${value}; Path=${options.path}; Max-Age=${options.maxAge}; HttpOnly=${options.httpOnly}; SameSite=${options.sameSite}; Secure=${options.secure}`);
-        },
-        remove(key: string, options: CookieOptions) {
-          event.response.headers.append("Set-Cookie", `${key}=; Path=${options.path}; Max-Age=0; HttpOnly=${options.httpOnly}; SameSite=${options.sameSite}; Secure=${options.secure}`);
-        },
-      },
-    }
+    const options = {
+      delay: stagger(0.2),
+      duration: 0.8,
+      easing: "ease-in-out" as const, 
+    };
+
+    animate(".animate-on-load", keyframes, options);
+  });
+
+  return (
+    <>
+      <p class="text-xl animate-on-load">
+        Benvenuto, Entità {props.profile.username || props.profile.id}.
+      </p>
+      
+      <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="animate-on-load">
+          <StatsCard title="Statistiche Entità">
+            <p>Frammenti d'Anima: <span class="font-mono text-biolume">{props.profile.soul_fragments}</span></p>
+            <p>Energia: <span class="font-mono text-biolume">{props.profile.energy}</span></p>
+          </StatsCard>
+        </div>
+
+        <div class="animate-on-load">
+          <StatsCard title="Pianeta Attivo">
+            <p>Età del Pianeta: <span class="font-mono text-biolume">{props.profile.planets[0]?.planet_age || 0} Anni</span></p>
+            <p>Nome: <span class="font-mono text-biolume">{props.profile.planets[0]?.planet_name || 'Senza Nome'}</span></p>
+          </StatsCard>
+        </div>
+      </div>
+    </>
   );
-
-  // 2. Eseguiamo la query per ottenere il profilo e il pianeta attivo.
-  // La magia di Supabase: con `planets(*)` fa una "join" automatica!
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select(`
-      *,
-      planets ( * )
-    `)
-    .eq("id", event.locals.user.id)
-    .single(); // .single() ci assicura di ottenere un solo oggetto, non un array.
-
-  if (error || !profile) {
-    // Se c'è un errore o il profilo non esiste, qualcosa è andato storto.
-    // Meglio mandare l'utente al login.
-    throw redirect("/login");
-  }
-
-  return profile;
 };
+{/* END DASHBOARD VIEW COMPONENT */}
 
-// 3. Il nostro componente, ora più ricco.
+
+{/* MAIN COMPONENT PAGE */}
 export default function DashboardPage() {
-  // Chiamiamo la nostra nuova funzione server
   const profileData = createAsync(() => getGameData());
 
   return (
     <div class="max-w-4xl">
-      <h1 class="text-4xl font-bold text-biolume mb-4">Dashboard dell'Entità</h1>
+      <h1 class="text-4xl font-bold text-biolume mb-6">Dashboard dell'Entità</h1>
       
-      <Show when={profileData()} fallback={<p>Caricamento dati Entità...</p>}>
-        {/* Qui `p` è l'Accessor, quindi dobbiamo chiamarlo come funzione: p() */}
-        {(p) => (
-          <div>
-            <p class="text-xl">
-              Benvenuto, Entità {p().username || p().id}.
-            </p>
-            
-            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="bg-starlight/10 p-4 rounded-md">
-                <h3 class="text-lg font-bold text-biolume/80">Statistiche Entità</h3>
-                <p>Frammenti d'Anima: <span class="font-mono text-biolume">{p().soul_fragments}</span></p>
-                <p>Energia: <span class="font-mono text-biolume">{p().energy}</span></p>
-              </div>
-
-              <div class="bg-starlight/10 p-4 rounded-md">
-                <h3 class="text-lg font-bold text-biolume/80">Pianeta Attivo</h3>
-                <p>Età del Pianeta: <span class="font-mono text-biolume">{p().planets[0]?.planet_age || 0} Anni</span></p>
-                <p>Nome: <span class="font-mono text-biolume">{p().planets[0]?.planet_name || 'Senza Nome'}</span></p>
-              </div>
-            </div>
-          </div>
-        )}
-      </Show>
+      {/* 1. Avvolgiamo tutto in <Suspense> e gli diamo il nostro Loader */}
+      <Suspense fallback={<Loader />}>
+        {/* 2. <Show> ora gestisce il caso in cui i dati arrivano ma sono null/error */}
+        <Show when={profileData()} fallback={<p>Errore nel caricamento dei dati.</p>}>
+          {(p) => <DashboardView profile={p()} />}
+        </Show>
+      </Suspense>
     </div>
   );
 }

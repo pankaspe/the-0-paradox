@@ -13,36 +13,34 @@ export default createMiddleware({
       import.meta.env.VITE_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          // Passiamo l'intero oggetto event.nativeEvent che contiene
-          // gli helper per la gestione dei cookie.
-          // Questo è il modo moderno e più semplice.
-          // NOTA: Richiede di importare `getCookie, setCookie, deleteCookie` da `vinxi/http`
-          // ma spesso `createServerClient` li gestisce internamente se gli passi l'evento.
-          // Per la massima compatibilità, definiamo i metodi manualmente.
-          get(key: string) {
-            return event.request.headers.get("cookie")?.split('; ').find(c => c.startsWith(key + '='))?.split('=')[1];
-          },
-          set(key: string, value: string, options: CookieOptions) {
-            event.response.headers.append("Set-Cookie", `${key}=${value}; Path=${options.path}; Max-Age=${options.maxAge}; HttpOnly=${options.httpOnly}; SameSite=${options.sameSite}; Secure=${options.secure}`);
-          },
-          remove(key: string, options: CookieOptions) {
-            event.response.headers.append("Set-Cookie", `${key}=; Path=${options.path}; Max-Age=0; HttpOnly=${options.httpOnly}; SameSite=${options.sameSite}; Secure=${options.secure}`);
-          },
+          get: (key) => event.request.headers.get("cookie")?.split('; ').find(c => c.startsWith(key + '='))?.split('=')[1],
+          set: (key, value, options) => event.response.headers.append("Set-Cookie", `${key}=${value}; Path=${options.path}; Max-Age=${options.maxAge}; HttpOnly=${options.httpOnly}; SameSite=${options.sameSite}; Secure=${options.secure}`),
+          remove: (key, options) => event.response.headers.append("Set-Cookie", `${key}=; Path=${options.path}; Max-Age=0; HttpOnly=${options.httpOnly}; SameSite=${options.sameSite}; Secure=${options.secure}`),
         },
       }
     );
 
+    // 1. Otteniamo l'utente
     const { data: { user } } = await supabase.auth.getUser();
     event.locals.user = user;
 
-    const publicRoutes = ['/login', '/register'];
-    if (user && publicRoutes.includes(pathname)) {
-      return redirect("/game/dashboard");
-    }
-    
+    const isUserLoggedIn = !!user;
+    const isAuthRoute = pathname === '/login' || pathname === '/register';
     const isGameRoute = pathname.startsWith('/game');
-    if (!user && isGameRoute) {
-      return redirect("/login");
+
+    // 2. CASO A: Utente loggato che prova ad andare su /login o /register
+    if (isUserLoggedIn && isAuthRoute) {
+      // Reindirizzalo via, non ha senso che sia qui.
+      return redirect('/game/dashboard');
     }
+
+    // 3. CASO B: Utente NON loggato che prova ad andare in una rotta di gioco
+    if (!isUserLoggedIn && isGameRoute) {
+      // Reindirizzalo al login. Questo risolve il tuo problema del 404.
+      return redirect('/login');
+    }
+
+    // 4. In tutti gli altri casi (utente loggato in rotta di gioco, utente sloggato
+    // su rotta pubblica come '/'), non fare nulla e lascia che la richiesta proceda.
   },
 });

@@ -1,9 +1,21 @@
 // src/routes/login.tsx
-import { createSignal } from "solid-js";
+import { createSignal, onMount } from "solid-js";
 import { supabase } from "~/lib/supabase.client";
-import { A } from "@solidjs/router"; // Per i link
+import { useNavigate  } from "@solidjs/router"; // Per i link
 
 export default function LoginPage() {
+
+  const navigate = useNavigate(); // Hook per navigare programmaticamente
+
+  // Controlla lo stato dell'utente quando il componente viene montato
+  onMount(async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      // Se c'è una sessione, l'utente è loggato. Reindirizzalo.
+      navigate("/game/dashboard", { replace: true });
+    }
+  });
+
   const [loading, setLoading] = createSignal(false);
   const [email, setEmail] = createSignal("");
   const [password, setPassword] = createSignal("");
