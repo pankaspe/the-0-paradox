@@ -1,0 +1,24 @@
+import "@unocss/reset/tailwind.css";
+import "virtual:uno.css";
+import { MetaProvider, Title } from "@solidjs/meta";
+
+import { Router } from "@solidjs/router";
+import { FileRoutes } from "@solidjs/start/router";
+import { Suspense } from "solid-js";
+
+export default function App() {
+  return (
+    <MetaProvider>
+      <Title>Bioma Zero</Title>
+      <Router
+        root={(props) => (
+          <>
+            <Suspense>{props.children}</Suspense>
+          </>
+        )}
+      >
+        <FileRoutes />
+      </Router>
+    </MetaProvider>
+  );
+}
