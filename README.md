@@ -7,7 +7,9 @@ Ecco il README riscritto con tono freddo, tecnico e diretto.
 ## Stato Sistema
 
 **ID:** `Bioma-Zero`
-**Status:** MVP stabile. Struttura architetturale completata. Sistema pronto all’integrazione moduli gameplay.
+Bioma Zero è un’applicazione web asincrona dove ogni utente possiede un bioma indipendente, persistito su PostgreSQL con RLS per isolamento dei dati. Le evoluzioni derivano da Cronache: questline multilivello in formato JSON, generate dinamicamente con Gemini e interpretate dal client. Il frontend SolidStart utilizza Server Functions e uno store globale reattivo per sincronizzazione immediata. L’architettura include autenticazione sicura, routing condizionale e caricamento modulare. 
+
+Il progetto è una challenge personale per sperimentare un ambiente Full TypeScript end-to-end e l’uso di Gemini come copilota per generazione iterativa di codice ottimizzato. Scalabile orizzontalmente con aggiornamenti incrementali senza downtime.
 
 ![alt text](public/screenshot.jpeg)
 
