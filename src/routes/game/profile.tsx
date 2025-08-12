@@ -58,7 +58,7 @@ export default function ProfilePage() {
   return (
     <div class="max-w-2xl">
       <h1 class="text-4xl font-bold text-biolume mb-8">Profilo dell'Entità</h1>
-      <Show when={!gameStore.isLoading} fallback={<Loader inCenter={false} />}>
+      <Show when={!gameStore.isLoading} fallback={<Loader inCenter={true} />}>
         <Show when={gameStore.profile} fallback={<p class="text-red-400">{gameStore.error || "Errore nel caricamento del profilo."}</p>}>
           {(profile) => (
             <div class="space-y-8 animate-fade-in">

@@ -15,7 +15,7 @@ export default defineConfig({
     {
       'grid-overlay': `
         [background-image:linear-gradient(to_right,rgba(123,141,219,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(123,141,219,0.05)_1px,transparent_1px)]
-        [background-size:20px_20px]
+        [background-size:10px_10px]
       `,
     }
   ],

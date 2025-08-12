@@ -6,10 +6,11 @@ import { CgGames } from "solid-icons/cg";
 import { BiSolidDashboard, BiSolidPlanet } from 'solid-icons/bi';
 import { FaSolidShop } from 'solid-icons/fa';
 import { BsStars } from 'solid-icons/bs';
-import { FaSolidUserGear } from 'solid-icons/fa'
+import { FaSolidUserGear, FaSolidInfo } from 'solid-icons/fa'
 
 
 const menuItems = [
+  { href: "/game/about", text: "The project", icon: FaSolidInfo },
   { href: "/game/dashboard", text: "Dashboard", icon: BiSolidDashboard },
   { href: "/game/bioma", text: "Bioma", icon: BiSolidPlanet },
   { href: "/game/profile", text: "Profilo", icon: FaSolidUserGear },

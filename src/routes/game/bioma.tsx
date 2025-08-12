@@ -60,8 +60,8 @@ export default function BiomaPage() {
                           opacity: 1, 
                           scale: 1,
                           filter: [
-                            'blur(8px) brightness(60%)',  // Stato "chiuso": più scuro e meno sfocato
-                            'blur(24px) brightness(75%)' // Stato "aperto": più luminoso e molto più sfocato
+                            'blur(8px) brightness(50%)',  // Stato "chiuso": più scuro e meno sfocato
+                            'blur(18px) brightness(75%)' // Stato "aperto": più luminoso e molto più sfocato
                           ]
                         }}
                         exit={{ opacity: 0, scale: 1.05 }}
@@ -93,7 +93,7 @@ export default function BiomaPage() {
                     direction: 'alternate', // Effetto pulsante (avanti e indietro)
                   }}
                 />
-                
+
                 {/* --- MODIFICA DEFINITIVA PER IL BIOMA --- */}
                 <Presence>
                   <For each={ equippedLayers()?.bioma ? [equippedLayers()!.bioma!] : [] }>
