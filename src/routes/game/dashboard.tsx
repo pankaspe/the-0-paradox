@@ -1,31 +1,16 @@
 // src/routes/game/dashboard.tsx
 import { createAsync } from "@solidjs/router";
 import { Show, onMount, Suspense, type Component } from "solid-js";
-import { getGameData } from "~/lib/game-actions"; // Importiamo la nostra azione
-import StatsCard from "~/components/game/dashboard/StatsCard"; // Importiamo il nostro componente UI
-import { animate, stagger } from "motion"; // Importiamo le funzioni di animazione
 import type { Tables } from "~/types/supabase";
+import { getGameData } from "~/lib/game-actions"; 
+
+import StatsCard from "~/components/game/dashboard/StatsCard"; 
 import Loader from "~/components/ui/Loader";
 
 type ProfileData = Tables<'profiles'> & { planets: Tables<'planets'>[] };
 
 {/* DASHBOARD VIEW COMPONENT */}
 const DashboardView: Component<{ profile: ProfileData }> = (props) => {
-  onMount(() => {
-    const keyframes: Record<string, any> = {
-      opacity: [0, 1],
-      transform: ["translateY(10px)", "translateY(0px)"],
-    };
-
-    const options = {
-      delay: stagger(0.2),
-      duration: 0.8,
-      easing: "ease-in-out" as const, 
-    };
-
-    animate(".animate-on-load", keyframes, options);
-  });
-
   return (
     <>
       <p class="text-xl animate-on-load">
