@@ -1,9 +1,8 @@
 // src/routes/game.tsx
-import { type RouteSectionProps } from "@solidjs/router";
+import { useLocation, type RouteSectionProps } from "@solidjs/router";
 import { Suspense, onMount } from "solid-js";
 import SideNav from "~/components/game/SideNav";
 import Topbar from "~/components/game/layout/Topbar";
-import Loader from "~/components/ui/Loader";
 import { gameStore, gameStoreActions } from "~/lib/gameStore";
 
 export default function GameLayout(props: RouteSectionProps) {
@@ -11,6 +10,11 @@ export default function GameLayout(props: RouteSectionProps) {
   onMount(() => {
     gameStoreActions.loadInitialData();
   });
+
+  const location = useLocation(); // Hook per ottenere l'URL corrente
+
+  // Determina se siamo nella pagina del bioma
+  const isBiomaPage = () => location.pathname === "/game/bioma";
 
   return (
     <div class="h-screen bg-abyss text-ghost flex overflow-hidden">
@@ -26,8 +30,8 @@ export default function GameLayout(props: RouteSectionProps) {
           />
         </div>
         
-        <main class="flex-1 overflow-y-auto">
-          <div class="pt-24 pb-20 md:pb-8 px-4 md:px-0 md:px-4">
+        <main class={`flex-1 overflow-y-auto ${isBiomaPage() ? 'p-0' : 'p-4 md:p-8'}`}>
+          <div class={!isBiomaPage() ? 'pt-24 pb-20 md:pb-8 px-4 md:px-0' : 'h-full'}>
             {props.children}
           </div>
         </main>

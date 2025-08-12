@@ -1,18 +1,21 @@
-// src/routes/game/bioma.tsx
-import { Show, For, createMemo } from "solid-js";
+import { For, Show, createMemo, createSignal } from "solid-js"; // Aggiunto <For>
+import { Motion, Presence } from "solid-motionone";
 import { equipItem } from "~/lib/game-actions";
 import { gameStore, gameStoreActions } from "~/lib/gameStore";
 import Loader from "~/components/ui/Loader";
-import type { InventoryItemWithDetails, EquippedLayers } from "~/types/game"; // Importiamo i nuovi tipi
+import type { InventoryItemWithDetails, EquippedLayers } from "~/types/game";
+import { CustomizationPanel } from "~/components/game/bioma/CustomizationPanel";
 
 export default function BiomaPage() {
   const STORAGE_URL = import.meta.env.VITE_SUPABASE_URL + "/storage/v1/object/public/images";
+  const [savingItemId, setSavingItemId] = createSignal<string | null>(null);
 
+  // Questa logica è già corretta
   const handleEquip = async (item: InventoryItemWithDetails) => {
-    if (!item.game_items) return;
+    if (!item.game_items || savingItemId()) return;
+    setSavingItemId(item.item_id);
 
-    // 1. Determiniamo il TIPO CORRETTO per lo store
-    let layerType: 'background' | 'bioma' | null = null;
+    let layerType: 'background' | 'bioma';
     
     switch (item.game_items.item_type) {
       case 'bioma_background':
@@ -22,103 +25,102 @@ export default function BiomaPage() {
         layerType = 'bioma';
         break;
       default:
-        // Gestiamo il caso in cui l'oggetto non sia equipaggiabile
         console.error("Tipo di oggetto non equipaggiabile:", item.game_items.item_type);
-        alert("Questo oggetto non può essere equipaggiato qui.");
+        setSavingItemId(null);
         return;
     }
 
-    // 2. Chiamiamo l'azione dello store con i dati GIUSTI
     gameStoreActions.equipBiomaLayer(
       { id: item.item_id, asset_url: item.game_items.asset_url },
-      layerType // Ora passiamo 'background' o 'bioma', correttamente!
+      layerType
     );
-
-    // 3. Salviamo sul server (questa parte era già corretta)
-    const result = await equipItem(item.item_id);
-    if (!result.success) {
-      alert(`Errore nel salvataggio: ${result.error}`);
-      // Qui potresti voler implementare una logica per annullare la modifica locale
-    }
+    
+    await equipItem(item.item_id);
+    setSavingItemId(null);
   };
-  
-  const backgrounds = createMemo(() => 
-    gameStore.profile?.inventory?.filter(item => item.game_items?.item_type === 'bioma_background')
-  );
-  const biomes = createMemo(() =>
-    gameStore.profile?.inventory?.filter(item => item.game_items?.item_type === 'bioma_bioma')
-  );
+
+  const equippedLayers = createMemo(() => gameStore.profile?.biomes[0]?.equipped_layers as EquippedLayers | null);
 
   return (
-    <div>
-      <h1 class="text-4xl font-bold text-biolume mb-8">Il Tuo Bioma</h1>
-      
+    <div class="w-full h-full">
       <Show when={!gameStore.isLoading} fallback={<Loader inCenter={true} />}>
         <Show when={gameStore.profile} fallback={<p class="text-red-400">{gameStore.error}</p>}>
-          {(profile) => {
-            // Facciamo un "cast" dei layer equipaggiati al nostro tipo definito
-            const equipped = () => profile().biomes[0]?.equipped_layers as EquippedLayers | null;
-
-            return (
-              <div class="flex flex-col lg:flex-row gap-8 animate-fade-in">
-                <div class="flex-1 aspect-square bg-black/50 rounded-2xl relative overflow-hidden border border-starlight/10 shadow-2xl shadow-starlight/5">
-                  <div class="absolute inset-0 bg-black/30 z-10" />
-                  <Show 
-                    when={equipped()} 
-                    fallback={<div class="w-full h-full flex items-center justify-center"><p class="text-ghost/50">Equipaggia degli oggetti per vedere il tuo Bioma.</p></div>}
-                  >
-                    {/* Ora TypeScript sa che equipped() ha le proprietà .background e .bioma */}
-                    {equipped()?.background?.asset_url && (
-                      <img src={`${STORAGE_URL}${equipped()!.background!.asset_url}`} alt="Sfondo" class="absolute inset-0 w-full h-full object-cover" />
+          {(P) => (
+            <div class="flex w-full h-full">
+              {/* Sezione Sinistra: Visualizzazione del Bioma */}
+              <div class="flex-1 bg-black relative">
+                
+                <Presence>
+                  <For each={ equippedLayers()?.background ? [equippedLayers()!.background!] : [] }>
+                    {(bg) => (
+                      <Motion.img
+                        initial={{ opacity: 0, scale: 1.05 }}
+                        // 1. PULSAZIONE ACCENTUATA
+                        animate={{ 
+                          opacity: 1, 
+                          scale: 1,
+                          filter: [
+                            'blur(8px) brightness(60%)',  // Stato "chiuso": più scuro e meno sfocato
+                            'blur(24px) brightness(75%)' // Stato "aperto": più luminoso e molto più sfocato
+                          ]
+                        }}
+                        exit={{ opacity: 0, scale: 1.05 }}
+                        transition={{ 
+                          duration: 0.8, 
+                          easing: "ease-in-out",
+                          filter: { 
+                            duration: 4, // Un po' più veloce per un effetto più marcato
+                            repeat: Infinity,
+                            direction: 'alternate',
+                          }
+                        }}
+                        src={`${STORAGE_URL}${bg.asset_url}`} 
+                        alt="Sfondo" 
+                        class="absolute inset-0 w-full h-full object-cover"
+                      />
                     )}
-                    {equipped()?.bioma?.asset_url && (
-                      <img src={`${STORAGE_URL}${equipped()!.bioma!.asset_url}`} alt="Pianeta" class="absolute inset-0 w-full h-full object-cover scale-50" />
-                    )}
-                  </Show>
-                </div>
+                  </For>
+                </Presence>
 
-                <div class="w-full lg:w-80 flex-shrink-0">
-                  <div class="bg-starlight/5 rounded-2xl p-6 border border-starlight/10">
-                    <h2 class="text-xl font-semibold text-biolume/80 mb-4">Inventario</h2>
-                    <div class="space-y-6">
-                      <div>
-                        <h3 class="text-ghost/60 mb-2 text-sm">Sfondi</h3>
-                        <div class="grid grid-cols-4 gap-3">
-                          <For each={backgrounds()}>
-                            {(item: InventoryItemWithDetails) => (
-                              <button 
-                                onClick={() => handleEquip(item)}
-                                class="aspect-square bg-black rounded-lg border-2 border-transparent hover:border-biolume focus:outline-none focus:border-biolume transition-all"
-                                classList={{ '!border-biolume shadow-lg shadow-biolume/20': equipped()?.background?.id === item.item_id }}
-                              >
-                                <img src={`${STORAGE_URL}${item.game_items?.asset_url}`} alt={item.game_items?.name ?? ''} class="w-full h-full object-cover rounded-md" />
-                              </button>
-                            )}
-                          </For>
-                        </div>
-                      </div>
-                      <div>
-                        <h3 class="text-ghost/60 mb-2 text-sm">Pianeti</h3>
-                        <div class="grid grid-cols-4 gap-3">
-                          <For each={biomes()}>
-                            {(item: InventoryItemWithDetails) => (
-                              <button 
-                                onClick={() => handleEquip(item)}
-                                class="aspect-square bg-black rounded-lg border-2 border-transparent hover:border-biolume focus:outline-none focus:border-biolume transition-all"
-                                classList={{ '!border-biolume shadow-lg shadow-biolume/20': equipped()?.bioma?.id === item.item_id }}
-                              >
-                                <img src={`${STORAGE_URL}${item.game_items?.asset_url}`} alt={item.game_items?.name ?? ''} class="w-full h-full object-cover rounded-md" />
-                              </button>
-                            )}
-                          </For>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <Motion.div
+                  class="absolute inset-0 grid-overlay pointer-events-none"
+                  animate={{
+                    opacity: [0.2, 0.6] // Pulsa da 20% a 60% di opacità
+                  }}
+                  transition={{
+                    duration: 3,            // Durata di ogni pulsazione
+                    repeat: Infinity,       // Ripeti all'infinito
+                    direction: 'alternate', // Effetto pulsante (avanti e indietro)
+                  }}
+                />
+                
+                {/* --- MODIFICA DEFINITIVA PER IL BIOMA --- */}
+                <Presence>
+                  <For each={ equippedLayers()?.bioma ? [equippedLayers()!.bioma!] : [] }>
+                    {(planet) => ( // 'planet' è l'oggetto, non un accessor
+                      <Motion.img
+                        initial={{ opacity: 0, scale: 0.45 }}
+                        animate={{ opacity: 1, scale: 0.5 }}
+                        exit={{ opacity: 0, scale: 0.45 }}
+                        transition={{ duration: 0.8, easing: "ease-in-out" }}
+                        src={`${STORAGE_URL}${planet.asset_url}`}
+                        alt="Pianeta" 
+                        class="absolute inset-0 w-full h-full object-contain"
+                      />
+                    )}
+                  </For>
+                </Presence>
               </div>
-            );
-          }}
+
+              {/* Sezione Destra: Pannello (già corretto) */}
+              <CustomizationPanel 
+                inventory={gameStore.profile!.inventory}
+                equippedLayers={equippedLayers()}
+                onEquip={handleEquip}
+                savingItemId={savingItemId()}
+              />
+            </div>
+          )}
         </Show>
       </Show>
     </div>

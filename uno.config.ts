@@ -11,7 +11,14 @@ import {
 } from 'unocss'
 
 export default defineConfig({
-  shortcuts: [],
+  shortcuts: [
+    {
+      'grid-overlay': `
+        [background-image:linear-gradient(to_right,rgba(123,141,219,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(123,141,219,0.05)_1px,transparent_1px)]
+        [background-size:20px_20px]
+      `,
+    }
+  ],
   theme: {
     colors: {
       'abyss': '#080f17ff',
