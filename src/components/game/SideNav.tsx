@@ -6,9 +6,12 @@ import { CgGames } from "solid-icons/cg";
 import { BiSolidDashboard } from 'solid-icons/bi';
 import { FaSolidShop } from 'solid-icons/fa';
 import { BsStars } from 'solid-icons/bs';
+import { FaSolidUserGear } from 'solid-icons/fa'
+
 
 const menuItems = [
   { href: "/game/dashboard", text: "Dashboard", icon: BiSolidDashboard },
+  { href: "/game/profile", text: "Profilo", icon: FaSolidUserGear },
   { href: "/game/chronicles", text: "Cronache", icon: CgGames },
   { href: "/game/galaxy-map", text: "Galassia", icon: BsStars },
   { href: "/game/emporium", text: "Emporio", icon: FaSolidShop },

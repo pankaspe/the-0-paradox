@@ -6,13 +6,12 @@ import Loader from "~/components/ui/Loader";
 
 export default function DashboardPage() {
   return (
-    <div class="max-w-4xl">      
+    <div class="max-w-4xl">    
+      <h1 class="text-4xl font-bold text-biolume mb-6">Dashboard</h1>
       <Show when={!gameStore.isLoading} fallback={<Loader inCenter={true} />}>
         <Show when={gameStore.profile} fallback={<p class="text-red-400">{gameStore.error}</p>}>
           {(profile) => (
             <div class="animate-fade-in">
-              <h1 class="text-4xl font-bold text-biolume mb-6">Dashboard</h1>
-
               <p class="text-xl">
                 Bentornata, <span class="font-bold text-biolume">{profile().username || "Entità"}</span>.
               </p>

@@ -80,9 +80,6 @@ const Topbar: Component<TopbarProps> = (props) => {
                 transition={{ duration: 0.2, easing: "ease-in-out" }}
                 class="absolute right-0 mt-2 w-48 bg-abyss border border-starlight/20 rounded-md shadow-lg p-2 z-50"
               >
-                <A href="/game/profile" class="block w-full text-left px-4 py-2 text-sm text-ghost rounded hover:bg-starlight/20">Profilo</A>
-                <A href="/game/bioma" class="block w-full text-left px-4 py-2 text-sm text-ghost rounded hover:bg-starlight/20">Il Mio Bioma</A>
-                <div class="my-1 h-px bg-starlight/10" />
                 <LogoutButton class="block w-full text-left px-4 py-2 text-sm text-ghost rounded hover:bg-starlight/20" />
               </Motion.div>
             </Show>
