@@ -1,43 +1,35 @@
 // src/routes/game.tsx
 import { type RouteSectionProps } from "@solidjs/router";
-import { Suspense, createSignal } from "solid-js";
+import { Suspense, onMount } from "solid-js";
 import SideNav from "~/components/game/SideNav";
-import TopbarWrapper from "~/components/game/layout/TopbarWrapper";
+import Topbar from "~/components/game/layout/Topbar";
 import Loader from "~/components/ui/Loader";
-
-// Importiamo l'icona del menu hamburger
-import { FiMenu } from "solid-icons/fi";
+import { gameStore, gameStoreActions } from "~/lib/gameStore";
 
 export default function GameLayout(props: RouteSectionProps) {
-  // Segnale per controllare lo stato del menu mobile (aperto/chiuso)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = createSignal(false);
+  // Quando il layout viene montato, lancia il caricamento dei dati
+  onMount(() => {
+    gameStoreActions.loadInitialData();
+  });
 
   return (
     <div class="h-screen bg-abyss text-ghost flex overflow-hidden">
-      {/* La SideNav ora riceve le props per gestirsi su mobile */}
-      <SideNav 
-        isOpen={isMobileMenuOpen()} 
-        onClose={() => setIsMobileMenuOpen(false)} 
-      />
-
-      <div class="flex-1 flex flex-col">
-        {/* --- Pulsante Menu Mobile --- */}
-        {/* Questo pulsante è visibile solo su schermi piccoli (md:hidden) */}
-        <div class="md:hidden h-16 flex-shrink-0 flex items-center px-4">
-          <button onClick={() => setIsMobileMenuOpen(true)}>
-            <FiMenu class="w-6 h-6 text-ghost" />
-          </button>
-        </div>
-
-        {/* La Topbar non è più visibile su schermi piccoli per dare spazio */}
-        <div class="hidden md:block">
-          <TopbarWrapper />
+      <SideNav />
+      <div class="relative flex-1 flex flex-col w-full">
+        <div class="absolute top-0 left-0 right-0 z-20 p-4 md:p-6 pointer-events-none">
+          {/* La Topbar ora legge direttamente dallo store globale */}
+          <Topbar 
+            username={gameStore.profile?.username ?? null}
+            soul_fragments={gameStore.profile?.soul_fragments ?? 0}
+            energy={gameStore.profile?.energy ?? 0}
+            avatar_id={gameStore.profile?.active_avatar_id ?? null}
+          />
         </div>
         
-        <main class="flex-1 p-4 md:p-8 overflow-y-auto relative">
-          <Suspense fallback={<Loader inCenter={true} />}>
+        <main class="flex-1 overflow-y-auto">
+          <div class="pt-24 pb-20 md:pb-8 px-4 md:px-0 md:px-4">
             {props.children}
-          </Suspense>
+          </div>
         </main>
       </div>
     </div>

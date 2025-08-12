@@ -1,6 +1,8 @@
 // uno.config.ts
 import {
   defineConfig,
+  presetAttributify,
+  presetIcons,
   presetTypography,
   presetUno,
   presetWebFonts,
@@ -9,40 +11,37 @@ import {
 } from 'unocss'
 
 export default defineConfig({
-  shortcuts: [
-    // ... i tuoi shortcut se ne hai
-  ],
+  shortcuts: [],
   theme: {
-    extend: { // Assicurati che sia dentro a 'extend'
+    colors: {
+      'abyss': '#080f17ff',
+      'starlight': '#7B8DDB',
+      'biolume': '#6EE7B7',
+      'ghost': '#E0E1DD',
+      'glow-start': '#6EE7B7',
+      'glow-end': '#7B8DDB',
+    },
+    extend: {
       keyframes: {
-        'slide-in': {
-          '0%': { transform: 'translateX(-100%)' },
-          '100%': { transform: 'translateX(0)' },
-        },
-        'fade-in': {
-          '0%': { opacity: 0 },
-          '100%': { opacity: 1 },
+        'gradient-text-flow': {
+          '0%, 100%': { 'background-position': '0% 50%' },
+          '50%': { 'background-position': '100% 50%' },
         }
       },
       animation: {
-        'slide-in': 'slide-in 0.3s ease-out forwards',
-        'fade-in': 'fade-in 0.3s ease-out forwards',
+        'gradient-text': 'gradient-text-flow 4s ease infinite',
+        'fade-in': 'fade-in 0.7s ease-in-out forwards',
       }
-    },
-    colors: {
-      'abyss': '#0D1B2A',         // Un blu/grigio scurissimo per lo sfondo
-      'starlight': '#7B8DDB',    // Un blu più chiaro, quasi viola, per i bordi e gli elementi UI
-      'biolume': '#6EE7B7',       // Il nostro verde bioluminescente per gli accenti e le azioni
-      'ghost': '#E0E1DD',         // Un bianco/grigio molto chiaro per il testo
     }
   },
   presets: [
     presetUno(),
+    presetAttributify(),
+    presetIcons(),
     presetTypography(),
     presetWebFonts({
       fonts: {
-        // Qui puoi definire dei font da Google Fonts, se vuoi
-        sans: 'Inter', // Esempio
+        sans: 'Inter',
       },
     }),
   ],

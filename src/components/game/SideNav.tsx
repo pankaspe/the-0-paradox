@@ -2,8 +2,6 @@
 import { For, type Component } from "solid-js";
 import { A } from "@solidjs/router";
 import { Motion } from "solid-motionone";
-
-// Importiamo le icone
 import { CgGames } from "solid-icons/cg";
 import { BiSolidDashboard } from 'solid-icons/bi';
 import { FaSolidShop } from 'solid-icons/fa';
@@ -16,69 +14,82 @@ const menuItems = [
   { href: "/game/emporium", text: "Emporio", icon: FaSolidShop },
 ];
 
-const NavLink: Component<{ href: string; icon: any; text: string; index: number }> = (props) => {
+const NavLink: Component<{ href: string; icon: any; text: string }> = (props) => {
   const Icon = props.icon;
   return (
-    <Motion.li
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.2 + props.index * 0.1, easing: "ease-out" }}
+    <A 
+      href={props.href} 
+      class="group flex flex-col items-center justify-center gap-1 w-full h-full transition-colors text-ghost/60 hover:text-biolume"
+      activeClass="active-link"
+      end
     >
-      <A 
-        href={props.href} 
-        class="flex flex-col items-center gap-2 p-3 rounded-lg transition-colors text-ghost/60 hover:bg-starlight/10 hover:text-ghost"
-        activeClass="!text-biolume"
-        end
+      <div class="relative flex items-center justify-center">
+        <div class="absolute rounded-full blur-lg transition-opacity duration-500 opacity-0 group-[.active-link]:opacity-60 bg-glow-start w-10 h-10"></div>
+        <Icon class="relative w-7 h-7 flex-shrink-0 transition-colors duration-300 group-[.active-link]:text-glow-start" />
+      </div>
+      
+      <span class="text-[10px] font-semibold tracking-wide transition-colors group-[.active-link]:bg-gradient-to-r group-[.active-link]:from-glow-start group-[.active-link]:to-glow-end group-[.active-link]:bg-clip-text group-[.active-link]:text-transparent group-[.active-link]:animate-gradient-text"
+        style={{"background-size": "200% 200%"}}
       >
-        <Icon class="w-7 h-7 flex-shrink-0" />
-        <span class="text-xs font-medium">{props.text}</span>
-      </A>
-    </Motion.li>
+        {props.text}
+      </span>
+    </A>
   );
 };
 
-// Il componente ora accetta props per gestire lo stato di apertura su mobile
-interface SideNavProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-export default function SideNav(props: SideNavProps) {
+export default function SideNav() {
   return (
     <>
-      {/* --- Overlay per Mobile --- */}
-      {/* Appare solo quando il menu è aperto su mobile, per scurire lo sfondo */}
-      <div 
-        class={`fixed inset-0 z-30 bg-black/60 transition-opacity md:hidden ${props.isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-        onClick={props.onClose} 
-      />
-
-      {/* --- Contenuto della Sidebar --- */}
-      <nav 
-        class={`fixed top-0 left-0 h-full z-40 flex-shrink-0 bg-gradient-to-b from-abyss to-starlight/10 p-4 flex flex-col border-r border-starlight/10 transition-transform md:relative md:translate-x-0 ${props.isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      {/* --- LAYOUT DESKTOP --- */}
+      {/* 
+        1. Il Motion.div è il figlio diretto del flex container del layout.
+           Dobbiamo dirgli di non restringersi (`flex-shrink-0`).
+      */}
+      <Motion.div
+        initial={{ x: "-100%" }}
+        animate={{ x: 0 }}
+        transition={{ duration: 0.5, easing: "ease-out" }}
+        class="hidden md:flex flex-shrink-0" // Aggiunto flex-shrink-0
       >
-        {/* Logo Section */}
-        <div class="text-center mb-16 mt-4">
-          <A href="/game/dashboard" class="group">
-            <h2 class="text-4xl font-bold text-biolume group-hover:animate-pulse tracking-widest">B</h2>
-            <p class="text-sm text-biolume/50 tracking-widest -mt-2">Z</p>
-          </A>
-        </div>
+        {/* 
+          2. Il <nav> interno deve occupare tutta l'altezza del suo genitore.
+             `h-full` fa esattamente questo.
+        */}
+        <nav class="w-24 bg-gradient-to-b from-abyss to-starlight/10 p-4 flex flex-col border-r border-starlight/10 h-full">
+          <div class="text-center mb-16 mt-4">
+            <A href="/game/dashboard" class="group">
+              <h2 class="text-4xl font-bold text-biolume group-hover:animate-pulse tracking-widest">B</h2>
+              <p class="text-sm text-biolume/50 tracking-widest -mt-2">Z</p>
+            </A>
+          </div>
+          <ul class="space-y-8">
+            <For each={menuItems}>
+              {(item) => (
+                <li><NavLink href={item.href} icon={item.icon} text={item.text} /></li>
+              )}
+            </For>
+          </ul>
+          <div class="mt-auto text-center text-xs text-starlight/40">
+            <p>v0.1.0</p>
+          </div>
+        </nav>
+      </Motion.div>
 
-        {/* Menu Section */}
-        <ul class="space-y-6">
+      {/* --- LAYOUT MOBILE --- */}
+      <Motion.nav
+        initial={{ y: "100%" }} // Parte da sotto lo schermo
+        animate={{ y: 0 }}
+        transition={{ duration: 0.5, easing: "ease-out" }}
+        class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-abyss/80 backdrop-blur-lg border-t border-starlight/10 z-50"
+      >
+        <ul class="flex justify-around items-center h-full">
           <For each={menuItems}>
-            {(item, index) => (
-              <NavLink href={item.href} icon={item.icon} text={item.text} index={index()} />
+            {(item) => (
+              <li class="flex-1 h-full"><NavLink href={item.href} icon={item.icon} text={item.text} /></li>
             )}
           </For>
         </ul>
-
-        {/* Footer Section */}
-        <div class="mt-auto text-center text-xs text-starlight/40">
-          <p>v0.1.0</p>
-        </div>
-      </nav>
+      </Motion.nav>
     </>
   );
 }

@@ -1,32 +1,24 @@
 // src/components/game/LogoutButton.tsx
-import { createSignal } from "solid-js";
-import { supabase } from "~/lib/supabase.client";
-import { BiRegularLogOutCircle } from 'solid-icons/bi'
+import { action } from "@solidjs/router";
+import { signOutUser } from "~/lib/game-actions";
 
-export default function LogoutButton() {
-  const [loading, setLoading] = createSignal(false);
+interface LogoutButtonProps {
+  class?: string;
+}
 
-  const handleLogout = async () => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      // Dopo il logout, reindirizza alla homepage.
-      window.location.href = "/"; 
-    } catch (error: any) {
-      alert(error.error_description || error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+// Definiamo l'azione usando l'helper `action`
+const logoutAction = action(signOutUser, "logout");
 
+export default function LogoutButton(props: LogoutButtonProps) {
   return (
-    <button
-      onClick={handleLogout}
-      disabled={loading()}
-      class="mt-8 py-2 px-4 font-semibold text-abyss bg-starlight rounded-md transition hover:bg-starlight/80 disabled:bg-starlight/50"
-    >
-      {loading() ? "Uscita in corso..." : <BiRegularLogOutCircle />}
-    </button>
+    // Usiamo un componente <Form> di Solid Router
+    <form action={logoutAction}>
+      <button
+        type="submit" // I pulsanti nei form devono avere type="submit"
+        class={props.class || ""}
+      >
+        Logout
+      </button>
+    </form>
   );
 }
