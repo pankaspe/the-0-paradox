@@ -1,16 +1,22 @@
 // src/components/ui/Loader.tsx
 import { type Component } from "solid-js";
 
-const Loader: Component = () => {
+interface LoaderProps {
+  inCenter?: boolean; // Prop opzionale per centrarlo
+}
+
+const Loader: Component<LoaderProps> = (props) => {
+  const wrapperClass = props.inCenter
+    ? "absolute inset-0 flex flex-col items-center justify-center bg-abyss/50"
+    : "flex flex-col items-center justify-center space-y-2 py-10";
+
   return (
-    <div class="flex flex-col items-center justify-center space-y-2">
-      <div class="relative flex h-8 w-8">
-        {/* Cerchio che pulsa (lo sfondo) */}
+    <div class={wrapperClass}>
+      <div class="relative flex h-10 w-10">
         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-biolume/75 opacity-75"></span>
-        {/* Cerchio statico (il centro) */}
-        <span class="relative inline-flex rounded-full h-8 w-8 bg-biolume"></span>
+        <span class="relative inline-flex rounded-full h-10 w-10 bg-biolume"></span>
       </div>
-      <p class="text-biolume/80 text-sm">Inizializzazione Universo...</p>
+      <p class="mt-4 text-biolume/80 text-sm tracking-wider">Inizializzazione Universo...</p>
     </div>
   );
 };

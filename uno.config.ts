@@ -13,7 +13,22 @@ export default defineConfig({
     // ... i tuoi shortcut se ne hai
   ],
   theme: {
-    // Qui definiamo il nostro tema personalizzato
+    extend: { // Assicurati che sia dentro a 'extend'
+      keyframes: {
+        'slide-in': {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
+        'fade-in': {
+          '0%': { opacity: 0 },
+          '100%': { opacity: 1 },
+        }
+      },
+      animation: {
+        'slide-in': 'slide-in 0.3s ease-out forwards',
+        'fade-in': 'fade-in 0.3s ease-out forwards',
+      }
+    },
     colors: {
       'abyss': '#0D1B2A',         // Un blu/grigio scurissimo per lo sfondo
       'starlight': '#7B8DDB',    // Un blu più chiaro, quasi viola, per i bordi e gli elementi UI
