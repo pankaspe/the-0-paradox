@@ -21,8 +21,8 @@ export default function DashboardPage() {
                   <p>Energia: <span class="font-mono text-biolume">{profile().energy}</span></p>
                 </StatsCard>
                 <StatsCard title="Pianeta Attivo">
-                  <p>Età del Pianeta: <span class="font-mono text-biolume">{profile().planets[0]?.planet_age || 0} Anni</span></p>
-                  <p>Nome: <span class="font-mono text-biolume">{profile().planets[0]?.planet_name || 'Senza Nome'}</span></p>
+                  <p>Età del Pianeta: <span class="font-mono text-biolume">{profile().biomes[0]?.bioma_age || 0} Anni</span></p>
+                  <p>Nome: <span class="font-mono text-biolume">{profile().biomes[0]?.bioma_name || 'Senza Nome'}</span></p>
                 </StatsCard>
               </div>
             </div>

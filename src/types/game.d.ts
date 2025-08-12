@@ -11,7 +11,7 @@ export type EquippedLayer = {
 // Definiamo la forma dell'oggetto equipped_layers
 export type EquippedLayers = {
   background?: EquippedLayer;
-  planet?: EquippedLayer;
+  bioma?: EquippedLayer;
   aura?: EquippedLayer; // Aggiungiamo anche aura per il futuro
 };
 
@@ -20,11 +20,12 @@ export type InventoryItemWithDetails = Tables<'inventory'> & {
   game_items: Tables<'game_items'> | null;
 };
 
-// Aggiorniamo ProfileWithPlanets per includere l'inventario
-export type ProfileWithPlanets = Tables<'profiles'> & { 
-  planets: Tables<'planets'>[];
-  inventory: InventoryItemWithDetails[]; // <-- AGGIUNTA CHIAVE
+// Aggiorniamo ProfileWithbiomes per includere l'inventario
+export type ProfileWithBiomes = Tables<'profiles'> & { 
+  biomes: Tables<'biomes'>[];
+  inventory: InventoryItemWithDetails[];
 };
 
+
 // Il tipo del contesto rimane lo stesso
-export type GameDataContextType = Accessor<ProfileWithPlanets | undefined>;
+export type GameDataContextType = Accessor<ProfileWithBiomes | undefined>;

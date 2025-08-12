@@ -12,14 +12,14 @@ export default function BiomaPage() {
     if (!item.game_items) return;
 
     // 1. Determiniamo il TIPO CORRETTO per lo store
-    let layerType: 'background' | 'planet' | null = null;
+    let layerType: 'background' | 'bioma' | null = null;
     
     switch (item.game_items.item_type) {
       case 'bioma_background':
         layerType = 'background';
         break;
-      case 'bioma_planet':
-        layerType = 'planet';
+      case 'bioma_bioma':
+        layerType = 'bioma';
         break;
       default:
         // Gestiamo il caso in cui l'oggetto non sia equipaggiabile
@@ -31,7 +31,7 @@ export default function BiomaPage() {
     // 2. Chiamiamo l'azione dello store con i dati GIUSTI
     gameStoreActions.equipBiomaLayer(
       { id: item.item_id, asset_url: item.game_items.asset_url },
-      layerType // Ora passiamo 'background' o 'planet', correttamente!
+      layerType // Ora passiamo 'background' o 'bioma', correttamente!
     );
 
     // 3. Salviamo sul server (questa parte era già corretta)
@@ -45,8 +45,8 @@ export default function BiomaPage() {
   const backgrounds = createMemo(() => 
     gameStore.profile?.inventory?.filter(item => item.game_items?.item_type === 'bioma_background')
   );
-  const planets = createMemo(() =>
-    gameStore.profile?.inventory?.filter(item => item.game_items?.item_type === 'bioma_planet')
+  const biomes = createMemo(() =>
+    gameStore.profile?.inventory?.filter(item => item.game_items?.item_type === 'bioma_bioma')
   );
 
   return (
@@ -57,7 +57,7 @@ export default function BiomaPage() {
         <Show when={gameStore.profile} fallback={<p class="text-red-400">{gameStore.error}</p>}>
           {(profile) => {
             // Facciamo un "cast" dei layer equipaggiati al nostro tipo definito
-            const equipped = () => profile().planets[0]?.equipped_layers as EquippedLayers | null;
+            const equipped = () => profile().biomes[0]?.equipped_layers as EquippedLayers | null;
 
             return (
               <div class="flex flex-col lg:flex-row gap-8 animate-fade-in">
@@ -67,12 +67,12 @@ export default function BiomaPage() {
                     when={equipped()} 
                     fallback={<div class="w-full h-full flex items-center justify-center"><p class="text-ghost/50">Equipaggia degli oggetti per vedere il tuo Bioma.</p></div>}
                   >
-                    {/* Ora TypeScript sa che equipped() ha le proprietà .background e .planet */}
+                    {/* Ora TypeScript sa che equipped() ha le proprietà .background e .bioma */}
                     {equipped()?.background?.asset_url && (
                       <img src={`${STORAGE_URL}${equipped()!.background!.asset_url}`} alt="Sfondo" class="absolute inset-0 w-full h-full object-cover" />
                     )}
-                    {equipped()?.planet?.asset_url && (
-                      <img src={`${STORAGE_URL}${equipped()!.planet!.asset_url}`} alt="Pianeta" class="absolute inset-0 w-full h-full object-cover scale-50" />
+                    {equipped()?.bioma?.asset_url && (
+                      <img src={`${STORAGE_URL}${equipped()!.bioma!.asset_url}`} alt="Pianeta" class="absolute inset-0 w-full h-full object-cover scale-50" />
                     )}
                   </Show>
                 </div>
@@ -100,12 +100,12 @@ export default function BiomaPage() {
                       <div>
                         <h3 class="text-ghost/60 mb-2 text-sm">Pianeti</h3>
                         <div class="grid grid-cols-4 gap-3">
-                          <For each={planets()}>
+                          <For each={biomes()}>
                             {(item: InventoryItemWithDetails) => (
                               <button 
                                 onClick={() => handleEquip(item)}
                                 class="aspect-square bg-black rounded-lg border-2 border-transparent hover:border-biolume focus:outline-none focus:border-biolume transition-all"
-                                classList={{ '!border-biolume shadow-lg shadow-biolume/20': equipped()?.planet?.id === item.item_id }}
+                                classList={{ '!border-biolume shadow-lg shadow-biolume/20': equipped()?.bioma?.id === item.item_id }}
                               >
                                 <img src={`${STORAGE_URL}${item.game_items?.asset_url}`} alt={item.game_items?.name ?? ''} class="w-full h-full object-cover rounded-md" />
                               </button>

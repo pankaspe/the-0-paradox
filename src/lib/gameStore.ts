@@ -1,10 +1,10 @@
 // src/lib/gameStore.ts
 import { createStore, produce } from "solid-js/store";
-import type { ProfileWithPlanets, EquippedLayers } from "~/types/game";
+import type { ProfileWithBiomes, EquippedLayers } from "~/types/game"; // Corretto: ProfileWithBiomes
 import { getInitialGameData } from "./game-actions";
 
 interface GameStore {
-  profile: ProfileWithPlanets | null;
+  profile: ProfileWithBiomes | null; // Corretto: ProfileWithBiomes
   isLoading: boolean;
   error: string | null;
 }
@@ -26,7 +26,7 @@ const actions = {
       const data = await getInitialGameData();
       if (data) {
         setStore(produce(s => {
-          s.profile = data as ProfileWithPlanets;
+          s.profile = data as ProfileWithBiomes; // Corretto: ProfileWithBiomes
           s.isLoading = false;
           s.error = null;
         }));
@@ -49,24 +49,13 @@ const actions = {
     setStore("profile", "username", originalUsername);
   },
 
- // --- SOLUZIONE REATTIVA E TYPESAFE ---
-  // --- QUESTA È LA VERSIONE FINALE E CORRETTA ---
-  equipBiomaLayer(layerData: { id: string; asset_url: string | null }, layerType: 'background' | 'planet') {
-    // Prendiamo l'oggetto `equipped_layers` attuale.
-    // Se è null o non definito, partiamo da un oggetto vuoto {}.
-    const currentLayers = store.profile?.planets[0]?.equipped_layers as EquippedLayers || {};
-
-    // Creiamo un oggetto `newLayers` completamente nuovo.
-    // Copiamo i layer esistenti e sovrascriviamo solo quello modificato.
-    // Questo garantisce la corretta SOSTITUZIONE e non la sovrapposizione.
+  equipBiomaLayer(layerData: { id: string; asset_url: string | null }, layerType: 'background' | 'bioma') { // Corretto: 'bioma'
+    const currentLayers = store.profile?.biomes[0]?.equipped_layers as EquippedLayers || {};
     const newLayers: EquippedLayers = {
       ...currentLayers,
       [layerType]: layerData, 
     };
-
-    // Sostituiamo l'INTERO oggetto `equipped_layers`.
-    // Questa operazione è 100% reattiva e typesafe.
-    setStore("profile", "planets", 0, "equipped_layers", newLayers);
+    setStore("profile", "biomes", 0, "equipped_layers", newLayers);
   }
 };
 

@@ -38,7 +38,7 @@ export const getInitialGameData = async () => {
     .from("profiles")
     .select(`
       *,
-      planets(*),
+      biomes(*),
       inventory(*, game_items(*))
     `)
     .eq('id', userId)
@@ -62,20 +62,20 @@ export const getBiomaData = async () => {
   const userId = event.locals.user.id;
 
   // Eseguiamo due query in parallelo per efficienza
-  const [planetRes, inventoryRes] = await Promise.all([
+  const [biomaRes, inventoryRes] = await Promise.all([
     // Query per il pianeta attivo
-    supabase.from('planets').select('*').eq('owner_id', userId).eq('is_active', true).single(),
+    supabase.from('biomes').select('*').eq('owner_id', userId).eq('is_active', true).single(),
     // Query per l'inventario, facendo una join per prendere i dettagli degli oggetti
     supabase.from('inventory').select('*, game_items(*)').eq('owner_id', userId)
   ]);
 
-  if (planetRes.error || inventoryRes.error) {
-    console.error("Errore in getBiomaData:", planetRes.error?.message || inventoryRes.error?.message);
+  if (biomaRes.error || inventoryRes.error) {
+    console.error("Errore in getBiomaData:", biomaRes.error?.message || inventoryRes.error?.message);
     return null;
   }
 
   return {
-    planet: planetRes.data,
+    bioma: biomaRes.data,
     inventory: inventoryRes.data,
   };
 };
@@ -118,35 +118,35 @@ export const equipItem = async (itemId: string) => {
   const userId = event.locals.user.id;
 
   // 1. Prendiamo i dettagli dell'oggetto e il pianeta attuale
-  const [itemRes, planetRes] = await Promise.all([
+  const [itemRes, biomeRes] = await Promise.all([
     supabase.from('game_items').select('*').eq('id', itemId).single(),
-    supabase.from('planets').select('*').eq('owner_id', userId).eq('is_active', true).single()
+    supabase.from('biomes').select('*').eq('owner_id', userId).eq('is_active', true).single()
   ]);
 
-  if (itemRes.error || !itemRes.data || planetRes.error || !planetRes.data) {
+  if (itemRes.error || !itemRes.data || biomeRes.error || !biomeRes.data) {
     return { success: false, error: "Oggetto o pianeta non trovato." };
   }
 
   const item = itemRes.data;
-  const planet = planetRes.data;
+  const biome = biomeRes.data;
   
   // 2. Prepariamo il nuovo stato per `equipped_layers`
-  const currentLayers = (planet.equipped_layers as any) || {};
+  const currentLayers = (biome.equipped_layers as any) || {};
   let newLayers = {};
 
   if (item.item_type === 'bioma_background') {
     newLayers = { ...currentLayers, background: { id: item.id, asset_url: item.asset_url } };
-  } else if (item.item_type === 'bioma_planet') {
-    newLayers = { ...currentLayers, planet: { id: item.id, asset_url: item.asset_url } };
+  } else if (item.item_type === 'bioma_bioma') {
+    newLayers = { ...currentLayers, bioma: { id: item.id, asset_url: item.asset_url } };
   } else {
     return { success: false, error: "Tipo di oggetto non equipaggiabile." };
   }
 
   // 3. Aggiorniamo il database
   const { error: updateError } = await supabase
-    .from('planets')
+    .from('biomes')
     .update({ equipped_layers: newLayers })
-    .eq('id', planet.id);
+    .eq('id', biome.id);
   
   if (updateError) {
     return { success: false, error: updateError.message };
