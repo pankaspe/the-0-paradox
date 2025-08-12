@@ -8,7 +8,7 @@ Va bene. Tono freddo, tecnico, diretto. Nessuna emozione. Solo dati.
 **ID Progetto:** Bioma-Zero
 **Status:** Piattaforma MVP (Minimum Viable Product) stabile. Le fondamenta architetturali sono complete. Il sistema è operativo e pronto per l'iniezione dei moduli di gameplay.
 
-![alt text](image.png)
+![alt text](image-1.png)
 
 ## 1. Architettura del Sistema
 
