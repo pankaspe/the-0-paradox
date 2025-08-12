@@ -3,7 +3,7 @@ import { For, type Component } from "solid-js";
 import { A } from "@solidjs/router";
 import { Motion } from "solid-motionone";
 import { CgGames } from "solid-icons/cg";
-import { BiSolidDashboard } from 'solid-icons/bi';
+import { BiSolidDashboard, BiSolidPlanet } from 'solid-icons/bi';
 import { FaSolidShop } from 'solid-icons/fa';
 import { BsStars } from 'solid-icons/bs';
 import { FaSolidUserGear } from 'solid-icons/fa'
@@ -11,6 +11,7 @@ import { FaSolidUserGear } from 'solid-icons/fa'
 
 const menuItems = [
   { href: "/game/dashboard", text: "Dashboard", icon: BiSolidDashboard },
+  { href: "/game/bioma", text: "Bioma", icon: BiSolidPlanet },
   { href: "/game/profile", text: "Profilo", icon: FaSolidUserGear },
   { href: "/game/chronicles", text: "Cronache", icon: CgGames },
   { href: "/game/galaxy-map", text: "Galassia", icon: BsStars },

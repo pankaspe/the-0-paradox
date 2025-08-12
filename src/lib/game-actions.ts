@@ -26,27 +26,58 @@ function createClient() {
   );
 }
 
-export const getGameData = async () => {
+export const getInitialGameData = async () => {
   const event = getRequestEvent();
-  if (!event?.locals.user) {
-    // Se non c'è utente (il middleware dovrebbe aver già reindirizzato),
-    // restituiamo null per sicurezza.
+  if (!event?.locals.user) return null;
+
+  const supabase = createClient();
+  const userId = event.locals.user.id;
+
+  // Eseguiamo tutte le query necessarie in parallelo
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select(`
+      *,
+      planets(*),
+      inventory(*, game_items(*))
+    `)
+    .eq('id', userId)
+    .single();
+
+  if (error) {
+    console.error("Errore in getInitialGameData:", error.message);
     return null;
   }
 
+  // La nostra query ora restituisce un profilo che include sia i pianeti che l'inventario.
+  return profile;
+};
+
+export const getBiomaData = async () => {
+  "use server";
+  const event = getRequestEvent();
+  if (!event?.locals.user) return null;
+
   const supabase = createClient();
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select(`*, planets(*)`)
-    .eq("id", event.locals.user.id)
-    .single();
-    
-  if (error) {
-    console.error("Errore in getGameData:", error.message);
-    return null; // In caso di errore, restituiamo null.
+  const userId = event.locals.user.id;
+
+  // Eseguiamo due query in parallelo per efficienza
+  const [planetRes, inventoryRes] = await Promise.all([
+    // Query per il pianeta attivo
+    supabase.from('planets').select('*').eq('owner_id', userId).eq('is_active', true).single(),
+    // Query per l'inventario, facendo una join per prendere i dettagli degli oggetti
+    supabase.from('inventory').select('*, game_items(*)').eq('owner_id', userId)
+  ]);
+
+  if (planetRes.error || inventoryRes.error) {
+    console.error("Errore in getBiomaData:", planetRes.error?.message || inventoryRes.error?.message);
+    return null;
   }
 
-  return profile;
+  return {
+    planet: planetRes.data,
+    inventory: inventoryRes.data,
+  };
 };
 
 export const updateUsername = async (newUsername: string) => {
@@ -73,6 +104,52 @@ export const updateUsername = async (newUsername: string) => {
       return { success: false, error: "Questo username è già stato preso." };
     }
     return { success: false, error: "Errore del database: " + error.message };
+  }
+
+  return { success: true };
+};
+
+export const equipItem = async (itemId: string) => {
+  "use server";
+  const event = getRequestEvent();
+  if (!event?.locals.user) return { success: false, error: "Non autenticato." };
+
+  const supabase = createClient();
+  const userId = event.locals.user.id;
+
+  // 1. Prendiamo i dettagli dell'oggetto e il pianeta attuale
+  const [itemRes, planetRes] = await Promise.all([
+    supabase.from('game_items').select('*').eq('id', itemId).single(),
+    supabase.from('planets').select('*').eq('owner_id', userId).eq('is_active', true).single()
+  ]);
+
+  if (itemRes.error || !itemRes.data || planetRes.error || !planetRes.data) {
+    return { success: false, error: "Oggetto o pianeta non trovato." };
+  }
+
+  const item = itemRes.data;
+  const planet = planetRes.data;
+  
+  // 2. Prepariamo il nuovo stato per `equipped_layers`
+  const currentLayers = (planet.equipped_layers as any) || {};
+  let newLayers = {};
+
+  if (item.item_type === 'bioma_background') {
+    newLayers = { ...currentLayers, background: { id: item.id, asset_url: item.asset_url } };
+  } else if (item.item_type === 'bioma_planet') {
+    newLayers = { ...currentLayers, planet: { id: item.id, asset_url: item.asset_url } };
+  } else {
+    return { success: false, error: "Tipo di oggetto non equipaggiabile." };
+  }
+
+  // 3. Aggiorniamo il database
+  const { error: updateError } = await supabase
+    .from('planets')
+    .update({ equipped_layers: newLayers })
+    .eq('id', planet.id);
+  
+  if (updateError) {
+    return { success: false, error: updateError.message };
   }
 
   return { success: true };
