@@ -66,12 +66,22 @@ export default function HomePage() {
           transition={{ duration: 1.5, delay: 0.5 }}
         >
           <p class="text-lg md:text-xl text-ghost/80 leading-relaxed">
-            Nell'immobilità che precede la creazione, dove il tempo stesso è un ricordo sbiadito, un singolo frammento di potenziale attende. Tu sei l'Erede, un custode di echi dimenticati, chiamato a interpretare il silenzio. Non brandirai armi, né conquisterai regni; la tua unica tela è un mondo dormiente, il tuo unico strumento è l'intelletto.
+            Bioma Zero. Un ecosistema procedurale dove ogni guardiano custodisce il proprio bioma, vivo e in costante mutazione. Non è un’arena, non è conquista: è ingegneria narrativa, enigmi logico-linguistici intrecciati a un kernel riscritto da zero per sostenere un’evoluzione modulare. Le Cronologie — frammenti generati dal modello Gemini LLM — sono artefatti interattivi, memorie digitali che reagiscono alle tue scelte, mutano, e raccontano una storia che solo tu puoi completare.
           </p>
-          <p class="mt-6 text-lg md:text-xl text-ghost/80 leading-relaxed">
-            Attraverso le **Cronache**, narrazioni perdute e dilemmi ancestrali, dovrai tessere la trama della realtà. Ogni enigma risolto non è una vittoria, ma una nota in una sinfonia cosmica. Ogni scelta non è un bivio, ma un seme piantato nel tessuto del tuo bioma personale. Dalle tue decisioni scaturiranno forme di vita mai viste, paesaggi che respirano e cieli che narrano storie. Questo non è un gioco sulla fine, ma sull'infinito potenziale di un singolo, consapevole inizio. La genesi è nelle tue mani. Sarai in grado di orchestrarla?
-          </p>
+          <h2 class="text-2xl text-left font-semibold mt-8 mb-4 text-ghost/90">
+            Perchè Bioma Zero?
+          </h2>
+            <blockquote class="mt-6 border-l-4 border-ghost/40 pl-4 text-sm text-left text-ghost/80 italic leading-relaxed">
+          Una challenge personale, scrivere un sistema interamente in TypeScript. 
+          SolidJS come framework reattivo privo di Virtual DOM, Supabase per orchestrare persistenza 
+          e sincronizzazione. Gemini non è solo un assistente, ma un copilota di progettazione, debug 
+          e creazione contenuti, un secondo layer cognitivo. L’intento non è produrre un semplice gioco, 
+          ma un ambiente che mantenga la mente in stato di allenamento costante, fondendo stimolo 
+          intellettuale e immersione. Un giorno forse, oltre lo schermo, in VR. Non per moda. Perché sarà 
+          il passo successivo naturale.
+        </blockquote>
         </Motion.div>
+
 
         {/* Call to Action */}
         <Motion.div
