@@ -11,7 +11,7 @@ Ecco il README riscritto con tono freddo, tecnico e diretto.
 
 Il progetto è una challenge personale per sperimentare un ambiente Full TypeScript end-to-end e l’uso di Gemini come copilota per generazione iterativa di codice ottimizzato. Scalabile orizzontalmente con aggiornamenti incrementali senza downtime.
 
-![alt text](public/screenshot.jpeg)
+![alt text](image.png)
 
 ---
 
