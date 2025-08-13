@@ -15,7 +15,7 @@ export default function BiomaPage() {
     if (!item.game_items || savingItemId()) return;
     setSavingItemId(item.item_id);
 
-    let layerType: 'background' | 'bioma';
+    let layerType: 'background' | 'bioma' | 'aura';
     
     switch (item.game_items.item_type) {
       case 'bioma_background':
@@ -24,6 +24,9 @@ export default function BiomaPage() {
       case 'bioma_bioma':
         layerType = 'bioma';
         break;
+      case 'aura':
+        layerType = 'aura';
+        break;
       default:
         console.error("Tipo di oggetto non equipaggiabile:", item.game_items.item_type);
         setSavingItemId(null);
@@ -31,7 +34,11 @@ export default function BiomaPage() {
     }
 
     gameStoreActions.equipBiomaLayer(
-      { id: item.item_id, asset_url: item.game_items.asset_url },
+      { 
+        id: item.item_id, 
+        asset_url: item.game_items.asset_url,
+        style_data: item.game_items.style_data as Record<string, any> | null
+      },
       layerType
     );
     
@@ -40,6 +47,12 @@ export default function BiomaPage() {
   };
 
   const equippedLayers = createMemo(() => gameStore.profile?.biomes[0]?.equipped_layers as EquippedLayers | null);
+
+  const auraStyle = createMemo(() => {
+    const aura = equippedLayers()?.aura;
+    // Restituisce l'oggetto style_data o un oggetto vuoto
+    return aura?.style_data ?? {}; 
+  });
 
   return (
     <div class="w-full h-full">
@@ -94,22 +107,32 @@ export default function BiomaPage() {
                   }}
                 />
 
-                {/* --- MODIFICA DEFINITIVA PER IL BIOMA --- */}
-                <Presence>
-                  <For each={ equippedLayers()?.bioma ? [equippedLayers()!.bioma!] : [] }>
-                    {(planet) => ( // 'planet' è l'oggetto, non un accessor
-                      <Motion.img
-                        initial={{ opacity: 0, scale: 0.45 }}
-                        animate={{ opacity: 1, scale: 0.5 }}
-                        exit={{ opacity: 0, scale: 0.45 }}
-                        transition={{ duration: 0.8, easing: "ease-in-out" }}
-                        src={`${STORAGE_URL}${planet.asset_url}`}
-                        alt="Pianeta" 
-                        class="absolute inset-0 w-full h-full object-contain"
-                      />
-                    )}
-                  </For>
-                </Presence>
+                {/* Creiamo un contenitore per il Bioma e la sua Aura */}
+                  <div class="absolute inset-0 w-full h-full">
+
+                    <Presence>
+                      <For each={equippedLayers()?.bioma ? [equippedLayers()!.bioma!] : []}>
+                        {(planet) => (
+                          <div 
+                            class="absolute inset-0 w-full h-full"
+                            // Applichiamo lo stile dell'aura qui
+                            style={auraStyle()}
+                          >
+                            <Motion.img
+                              initial={{ opacity: 0, scale: 0.45 }}
+                              animate={{ opacity: 1, scale: 0.5 }}
+                              exit={{ opacity: 0, scale: 0.45 }}
+                              transition={{ duration: 0.8, easing: "ease-in-out" }}
+                              src={`${STORAGE_URL}${planet.asset_url}`}
+                              alt="Pianeta"
+                              class="absolute inset-0 w-full h-full object-contain"
+                            />
+                          </div>
+                        )}
+                      </For>
+                    </Presence>
+                  </div>
+                {/* --- FINE DELLA SOLUZIONE --- */}
               </div>
 
               {/* Sezione Destra: Pannello (già corretto) */}

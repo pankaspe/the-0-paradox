@@ -6,6 +6,7 @@ import type { Tables } from "./supabase";
 export type EquippedLayer = {
   id: string;
   asset_url: string | null;
+  style_data?: Record<string, any> | null; 
 };
 
 // Definiamo la forma dell'oggetto equipped_layers

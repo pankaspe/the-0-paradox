@@ -50,6 +50,10 @@ export default defineConfig({
         'gradient-text-flow': {
           '0%, 100%': { 'background-position': '0% 50%' },
           '50%': { 'background-position': '100% 50%' },
+        },
+        'pulse-fire': {
+          'from': { filter: 'drop-shadow(0 0 8px rgba(255, 87, 34, 0.7)) drop-shadow(0 0 20px rgba(220, 38, 38, 0.5))' },
+          'to': { filter: 'drop-shadow(0 0 12px rgba(255, 87, 34, 1)) drop-shadow(0 0 30px rgba(220, 38, 38, 0.7))' }
         }
       },
       animation: {

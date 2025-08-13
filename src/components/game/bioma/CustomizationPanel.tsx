@@ -10,7 +10,7 @@ const groupDisplayNames: Record<string, string> = {
   bioma_background: "Sfondi",
   bioma_bioma: "Nuclei",
   // Aggiungi qui altre categorie future
-  // 'aura': 'Aure',
+  aura: 'Aure',
 };
 
 interface CustomizationPanelProps {

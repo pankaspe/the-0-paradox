@@ -119,7 +119,7 @@ const actions = {
    * @param layerData The ID and asset URL of the item to equip.
    * @param layerType The type of layer to update (e.g., 'background', 'bioma').
    */
-  equipBiomaLayer(layerData: { id: string; asset_url: string | null }, layerType: 'background' | 'bioma') {
+  equipBiomaLayer(layerData: { id: string; asset_url: string | null; style_data?: Record<string, any> | null }, layerType: 'background' | 'bioma' | 'aura') {
     if (!store.profile || !store.profile.biomes[0]) return;
     
     // 1. Safely get the current layers, falling back to an empty object if null.
