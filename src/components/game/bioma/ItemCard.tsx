@@ -5,6 +5,8 @@ import { Motion } from "solid-motionone";
 import type { InventoryItemWithDetails } from "~/types/game";
 import Spinner from "~/components/ui/Spinner";
 import { FiCheckCircle } from 'solid-icons/fi';
+import { Image } from "@unpic/solid";
+
 
 export interface ItemCardProps {
   item: InventoryItemWithDetails;
@@ -85,11 +87,13 @@ export const ItemCard: Component<ItemCardProps> = (props) => {
         }
       >
         {/* Se l'URL esiste, mostriamo l'immagine come prima */}
-        <img 
-          src={`${STORAGE_URL}${props.item.game_items!.asset_url}`}
-          alt={props.item.game_items!.name}
-          class="w-full h-full object-cover"
-        />
+          <Image
+            src={`${STORAGE_URL}${props.item.game_items!.asset_url}`}
+             class="w-full h-full object-cover"
+            width={800}
+            height={600}
+            alt="A lovely bath"
+          />
       </Show>
       {/* --- FINE MODIFICA --- */}
 

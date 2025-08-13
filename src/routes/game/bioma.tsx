@@ -8,6 +8,8 @@ import Loader from "~/components/ui/Loader";
 import type { InventoryItemWithDetails, EquippedLayers } from "~/types/game";
 import { CustomizationPanel } from "~/components/game/bioma/CustomizationPanel";
 
+import { Image } from "@unpic/solid";
+
 export default function BiomaPage() {
   const STORAGE_URL = import.meta.env.VITE_SUPABASE_URL + "/storage/v1/object/public/images";
   const [savingItemId, setSavingItemId] = createSignal<string | null>(null);
@@ -107,17 +109,22 @@ export default function BiomaPage() {
                     {(bg) => {
                       if (bg.asset_url) onMount(() => setLoadingImages(prev => new Set(prev).add(bg.asset_url!)));
                       return (
-                        <Motion.img
-                          initial={{ opacity: 0, scale: 1.05 }}
-                          animate={{ opacity: 1, scale: 1, filter: ['blur(8px) brightness(50%)', 'blur(18px) brightness(75%)'] }}
-                          exit={{ opacity: 0, scale: 1.05 }}
-                          transition={{ duration: 0.8, easing: "ease-in-out", filter: { duration: 4, repeat: Infinity, direction: 'alternate' } }}
-                          src={`${STORAGE_URL}${bg.asset_url}`} 
-                          alt="Sfondo" 
-                          class="absolute inset-0 w-full h-full object-cover"
+                      <Motion.div // Usiamo Motion.div per controllare il contenitore
+                        initial={{ opacity: 0, scale: 1.05 }}
+                        animate={{ opacity: 1, scale: 1, filter: ['blur(8px) brightness(50%)', 'blur(18px) brightness(75%)'] }}
+                        exit={{ opacity: 0, scale: 1.05 }}
+                        transition={{ duration: 0.8, easing: "ease-in-out", filter: { duration: 4, repeat: Infinity, direction: 'alternate' } }}
+                        class="absolute inset-0 w-full h-full"
+                      >
+                        <Image
+                          src={`${STORAGE_URL}${bg.asset_url}`}
+                          alt="Sfondo"
+                          class="w-full h-full object-cover"
+                          layout="fullWidth" // Le props di @unpic/solid
                           onLoad={() => handleImageLoad(bg.asset_url!)}
                           onError={() => handleImageLoad(bg.asset_url!)}
                         />
+                      </Motion.div>
                       );
                     }}
                   </For>

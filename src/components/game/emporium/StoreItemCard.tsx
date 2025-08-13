@@ -7,6 +7,7 @@ import { buyItem } from "~/lib/game-actions";
 import Spinner from "~/components/ui/Spinner";
 // Importiamo il tipo Tables per allineare le props
 import type { Tables } from "~/types/supabase";
+import { Image } from "@unpic/solid";
 
 const rarityStyles = {
   common: { border: "rarity-border-common", text: "rarity-text-common", bg: "rarity-bg-common" },
@@ -72,32 +73,26 @@ export const StoreItemCard: Component<StoreItemCardProps> = (props) => {
         <Show 
           when={props.item.asset_url}
           fallback={
-            // Usiamo lo stesso identico placeholder animato e sfocato
             <Motion.div 
-              class="w-20 h-20 rounded-full"
-              style={{ "background-color": auraMainColor() }}
+              class="w-20 h-20 rounded-full bg-biolume/30"
               animate={{
                 scale: [1, 1.1, 1],
-                opacity: [0.6, 0.9, 0.6],
+                opacity: [0.7, 1, 0.7],
               }}
               transition={{
-                duration: 2.5,
+                duration: 2,
                 repeat: Infinity,
                 easing: "ease-in-out",
               }}
             >
-              <div 
-                class="w-full h-full rounded-full"
-                style={{ 
-                  "box-shadow": `0 0 15px 3px ${auraMainColor()}`
-                }}
-              />
+              <div class="w-full h-full rounded-full border-2 border-biolume" />
             </Motion.div>
           }
         >
-          <img 
+          <Image
             src={`${STORAGE_URL}${props.item.asset_url}`} 
-            alt={props.item.name} 
+            width={800}
+            height={600}
             class="max-h-full max-w-full object-contain" 
           />
         </Show>

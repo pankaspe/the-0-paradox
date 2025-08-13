@@ -7,17 +7,26 @@ export type EquippedLayer = {
   id: string;
   asset_url: string | null;
   style_data?: Record<string, any> | null; 
+  // --- AGGIUNGIAMO LE DIMENSIONI QUI ---
+  width?: number;
+  height?: number;
 };
+
+// Il resto dei tipi può rimanere invariato, dato che il "problema"
+// non è nel dato sorgente (che arriva da Supabase) ma nel dato
+// che viene memorizzato nello stato "equipaggiato".
 
 // Definiamo la forma dell'oggetto equipped_layers
 export type EquippedLayers = {
   background?: EquippedLayer;
   bioma?: EquippedLayer;
-  aura?: EquippedLayer; // Aggiungiamo anche aura per il futuro
+  aura?: EquippedLayer;
 };
 
 // Definiamo il tipo per un oggetto dell'inventario con i dettagli dell'oggetto
 export type InventoryItemWithDetails = Tables<'inventory'> & {
+  // Assicurati che il tipo generato da Supabase per 'game_items'
+  // includa le colonne asset_width e asset_height.
   game_items: Tables<'game_items'> | null;
 };
 
