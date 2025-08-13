@@ -97,7 +97,9 @@ export default function AboutPage() {
   };
 
   return (
-    <div class="max-w-4xl">    
+    <div class="w-full h-full overflow-y-auto"> 
+        <div class="max-w-7xl w-full mx-auto p-4 md:p-6 pb-24"> 
+        <h1 class="text-4xl font-bold text-biolume mb-6">Bioma Zero</h1>
       {/* --- HEADER --- */}
       <Motion.div 
         initial={{ opacity: 0, y: -20 }}
@@ -105,7 +107,6 @@ export default function AboutPage() {
         transition={{ duration: 0.5, easing: "ease-in-out", delay: 0 }}
         class="space-y-4"
       >
-        <h1 class="text-4xl font-bold text-biolume">Bioma Zero - Rapporto di Sistema</h1>
         <p class="text-ghost/60">LOG: Stato Attuale del Sistema. Piattaforma MVP stabile.</p>
       </Motion.div>
 
@@ -134,5 +135,6 @@ export default function AboutPage() {
         </For>
       </InfoSection>
     </div>
+  </div>
   );
 }

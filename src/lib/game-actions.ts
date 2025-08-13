@@ -158,6 +158,31 @@ export const equipItem = async (itemId: string) => {
 };
 
 /**
+ * Sets the active avatar for the authenticated user.
+ * @param {string} itemId - The ID of the `game_items` to set as the active avatar.
+ * @returns {Promise<{success: boolean, error?: string}>} An object indicating the outcome.
+ */
+export const equipAvatar = async (itemId: string) => {
+  const event = getRequestEvent();
+  if (!event?.locals.user) {
+    return { success: false, error: "User not authenticated." };
+  }
+
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ active_avatar_id: itemId })
+    .eq('id', event.locals.user.id);
+
+  if (error) {
+    return { success: false, error: "Database error: " + error.message };
+  }
+
+  return { success: true };
+};
+
+/**
  * Signs the user out and redirects them to the homepage.
  */
 export const signOutUser = async () => {
@@ -166,11 +191,11 @@ export const signOutUser = async () => {
 
   if (error) {
     console.error("Error during logout:", error.message);
-    // In a real app, you might want to return an error instead of just logging
+    return { success: false, error: error.message };
   }
   
-  // The idiomatic way to redirect after a server action in SolidStart
-  throw redirect("/");
+  // Restituisce semplicemente un oggetto di successo.
+  return { success: true };
 };
 
 /**

@@ -2,21 +2,17 @@
 import { For, type Component } from "solid-js";
 import { A } from "@solidjs/router";
 import { Motion } from "solid-motionone";
-import { CgGames } from "solid-icons/cg";
 import { BiSolidDashboard, BiSolidPlanet } from 'solid-icons/bi';
 import { FaSolidShop } from 'solid-icons/fa';
-import { BsStars } from 'solid-icons/bs';
-import { FaSolidUserGear, FaSolidInfo } from 'solid-icons/fa'
+import { FaSolidInfo } from 'solid-icons/fa'
 
 
 const menuItems = [
-  { href: "/game/about", text: "The project", icon: FaSolidInfo },
   { href: "/game/dashboard", text: "Dashboard", icon: BiSolidDashboard },
   { href: "/game/bioma", text: "Bioma", icon: BiSolidPlanet },
-  { href: "/game/profile", text: "Profilo", icon: FaSolidUserGear },
-  { href: "/game/chronicles", text: "Cronache", icon: CgGames },
-  { href: "/game/galaxy-map", text: "Galassia", icon: BsStars },
   { href: "/game/emporio", text: "Emporio", icon: FaSolidShop },
+  { href: "/game/about", text: "The project", icon: FaSolidInfo },
+
 ];
 
 const NavLink: Component<{ href: string; icon: any; text: string }> = (props) => {

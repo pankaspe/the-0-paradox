@@ -101,6 +101,16 @@ const actions = {
       setStore("profile", "username", originalUsername);
     }
   },
+
+  /**
+   * Optimistically updates the active avatar in the local store.
+   * @param newAvatarId The ID of the new avatar to display.
+   */
+  equipAvatar(newAvatarId: string) {
+    if (store.profile) {
+      setStore("profile", "active_avatar_id", newAvatarId);
+    }
+  },
   
   // --- Biome Actions ---
 
