@@ -37,7 +37,7 @@ export default function ProfilePage() {
     const originalUsername = gameStore.profile?.username || "";
 
     // Aggiornamento Ottimistico
-    gameStoreActions.updateUsername(usernameToSave, originalUsername);
+    gameStoreActions.updateUsername(usernameToSave);
     setIsEditing(false);
 
     // Chiamata al Server

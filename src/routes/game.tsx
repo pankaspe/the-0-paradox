@@ -17,7 +17,7 @@ export default function GameLayout(props: RouteSectionProps) {
   const isBiomaPage = () => location.pathname === "/game/bioma";
 
   return (
-    <div class="h-screen bg-abyss text-ghost flex overflow-hidden">
+    <div class="h-screen text-ghost flex overflow-hidden">
       <SideNav />
       <div class="relative flex-1 flex flex-col w-full">
         <div class="absolute top-0 left-0 right-0 z-20 p-4 md:p-6 pointer-events-none">

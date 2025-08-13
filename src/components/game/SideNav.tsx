@@ -16,7 +16,7 @@ const menuItems = [
   { href: "/game/profile", text: "Profilo", icon: FaSolidUserGear },
   { href: "/game/chronicles", text: "Cronache", icon: CgGames },
   { href: "/game/galaxy-map", text: "Galassia", icon: BsStars },
-  { href: "/game/emporium", text: "Emporio", icon: FaSolidShop },
+  { href: "/game/emporio", text: "Emporio", icon: FaSolidShop },
 ];
 
 const NavLink: Component<{ href: string; icon: any; text: string }> = (props) => {
@@ -54,7 +54,7 @@ export default function SideNav() {
         initial={{ x: "-100%" }}
         animate={{ x: 0 }}
         transition={{ duration: 0.5, easing: "ease-out" }}
-        class="hidden md:flex flex-shrink-0" // Aggiunto flex-shrink-0
+        class="hidden lg:flex flex-shrink-0 bg-abyss" // Aggiunto flex-shrink-0
       >
         {/* 
           2. Il <nav> interno deve occupare tutta l'altezza del suo genitore.
@@ -85,7 +85,7 @@ export default function SideNav() {
         initial={{ y: "100%" }} // Parte da sotto lo schermo
         animate={{ y: 0 }}
         transition={{ duration: 0.5, easing: "ease-out" }}
-        class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-abyss/80 backdrop-blur-lg border-t border-starlight/10 z-50"
+        class="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-abyss/80 backdrop-blur-lg border-t border-starlight/10 z-50"
       >
         <ul class="flex justify-around items-center h-full">
           <For each={menuItems}>

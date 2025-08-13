@@ -17,6 +17,23 @@ export default defineConfig({
         [background-image:linear-gradient(to_right,rgba(123,141,219,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(123,141,219,0.05)_1px,transparent_1px)]
         [background-size:10px_10px]
       `,
+      // --- Rarity Style Shortcuts ---
+      // Common
+      'rarity-border-common': 'border-green-400/30',
+      'rarity-text-common':   'text-green-400',
+      'rarity-bg-common':     'bg-green-900/20',
+      // Rare
+      'rarity-border-rare': 'border-blue-400/30',
+      'rarity-text-rare':   'text-blue-400',
+      'rarity-bg-rare':     'bg-blue-900/20',
+      // Epic
+      'rarity-border-epic': 'border-purple-400/30',
+      'rarity-text-epic':   'text-purple-400',
+      'rarity-bg-epic':     'bg-purple-900/20',
+      // Seasonal (using red as you suggested)
+      'rarity-border-seasonal': 'border-red-400/30',
+      'rarity-text-seasonal':   'text-red-400',
+      'rarity-bg-seasonal':     'bg-red-900/20',
     }
   ],
   theme: {

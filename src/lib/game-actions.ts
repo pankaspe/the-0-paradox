@@ -1,16 +1,24 @@
 // src/lib/game-actions.ts
+
 "use server";
 
 import { getRequestEvent } from "solid-js/web";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import type { Database } from "~/types/supabase";
 import { redirect } from "@solidjs/router";
+import type { InventoryItemWithDetails } from "~/types/game";
 
-// Funzione helper per creare il client, per non ripeterci
+/**
+ * -----------------------------------------------------------------------------
+ * Supabase Client Helper
+ * -----------------------------------------------------------------------------
+ * A private helper function to create a Supabase server client instance.
+ * Avoids code repetition and ensures consistent client configuration.
+ */
 function createClient() {
   const event = getRequestEvent();
   if (!event) {
-    throw new Error("getRequestEvent() non ha trovato un evento. Assicurati di essere in un contesto server.");
+    throw new Error("Server context not found. Ensure this runs within a server environment.");
   }
 
   return createServerClient<Database>(
@@ -26,6 +34,18 @@ function createClient() {
   );
 }
 
+/**
+ * -----------------------------------------------------------------------------
+ * Core Game Data Actions
+ * -----------------------------------------------------------------------------
+ */
+
+/**
+ * Fetches all essential game data for the currently authenticated user.
+ * This includes their profile, all their biomes, and their complete inventory with item details.
+ * This is the primary data loading function when the game starts.
+ * @returns {Promise<object | null>} A promise that resolves to the user's complete profile object or null if not found or on error.
+ */
 export const getInitialGameData = async () => {
   const event = getRequestEvent();
   if (!event?.locals.user) return null;
@@ -33,7 +53,6 @@ export const getInitialGameData = async () => {
   const supabase = createClient();
   const userId = event.locals.user.id;
 
-  // Eseguiamo tutte le query necessarie in parallelo
   const { data: profile, error } = await supabase
     .from("profiles")
     .select(`
@@ -45,52 +64,30 @@ export const getInitialGameData = async () => {
     .single();
 
   if (error) {
-    console.error("Errore in getInitialGameData:", error.message);
+    console.error("Error in getInitialGameData:", error.message);
     return null;
   }
 
-  // La nostra query ora restituisce un profilo che include sia i pianeti che l'inventario.
   return profile;
 };
 
-export const getBiomaData = async () => {
-  "use server";
-  const event = getRequestEvent();
-  if (!event?.locals.user) return null;
-
-  const supabase = createClient();
-  const userId = event.locals.user.id;
-
-  // Eseguiamo due query in parallelo per efficienza
-  const [biomaRes, inventoryRes] = await Promise.all([
-    // Query per il pianeta attivo
-    supabase.from('biomes').select('*').eq('owner_id', userId).eq('is_active', true).single(),
-    // Query per l'inventario, facendo una join per prendere i dettagli degli oggetti
-    supabase.from('inventory').select('*, game_items(*)').eq('owner_id', userId)
-  ]);
-
-  if (biomaRes.error || inventoryRes.error) {
-    console.error("Errore in getBiomaData:", biomaRes.error?.message || inventoryRes.error?.message);
-    return null;
-  }
-
-  return {
-    bioma: biomaRes.data,
-    inventory: inventoryRes.data,
-  };
-};
-
+/**
+ * Updates the username for the authenticated user.
+ * Includes server-side validation for the new username.
+ * @param {string} newUsername - The new username to set.
+ * @returns {Promise<{success: boolean, error?: string}>} An object indicating the outcome of the operation.
+ */
 export const updateUsername = async (newUsername: string) => {
   const event = getRequestEvent();
   if (!event?.locals.user) {
-    return { success: false, error: "Utente non autenticato." };
+    return { success: false, error: "User not authenticated." };
   }
   
   if (!newUsername || newUsername.length < 3) {
-      return { success: false, error: "L'username deve avere almeno 3 caratteri." };
+      return { success: false, error: "Username must be at least 3 characters long." };
   }
   if (!/^[a-zA-Z0-9_]+$/.test(newUsername)) {
-      return { success: false, error: "L'username può contenere solo lettere, numeri e underscore." };
+      return { success: false, error: "Username can only contain letters, numbers, and underscores." };
   }
 
   const supabase = createClient();
@@ -100,49 +97,54 @@ export const updateUsername = async (newUsername: string) => {
     .eq('id', event.locals.user.id);
 
   if (error) {
+    // Specific error code for unique constraint violation
     if (error.code === '23505') {
-      return { success: false, error: "Questo username è già stato preso." };
+      return { success: false, error: "This username is already taken." };
     }
-    return { success: false, error: "Errore del database: " + error.message };
+    return { success: false, error: "Database error: " + error.message };
   }
 
   return { success: true };
 };
 
+/**
+ * Equips a specific item to the user's active biome.
+ * Updates the 'equipped_layers' JSONB column on the biome.
+ * @param {string} itemId - The ID of the `game_items` to equip.
+ * @returns {Promise<{success: boolean, error?: string}>} An object indicating the outcome of the operation.
+ */
 export const equipItem = async (itemId: string) => {
-  "use server";
   const event = getRequestEvent();
-  if (!event?.locals.user) return { success: false, error: "Non autenticato." };
+  if (!event?.locals.user) return { success: false, error: "Not authenticated." };
 
   const supabase = createClient();
   const userId = event.locals.user.id;
 
-  // 1. Prendiamo i dettagli dell'oggetto e il pianeta attuale
+  // Fetch item details and the user's active biome in parallel
   const [itemRes, biomeRes] = await Promise.all([
     supabase.from('game_items').select('*').eq('id', itemId).single(),
     supabase.from('biomes').select('*').eq('owner_id', userId).eq('is_active', true).single()
   ]);
 
   if (itemRes.error || !itemRes.data || biomeRes.error || !biomeRes.data) {
-    return { success: false, error: "Oggetto o pianeta non trovato." };
+    return { success: false, error: "Item or biome not found." };
   }
 
   const item = itemRes.data;
   const biome = biomeRes.data;
   
-  // 2. Prepariamo il nuovo stato per `equipped_layers`
+  // Prepare the new state for `equipped_layers`
   const currentLayers = (biome.equipped_layers as any) || {};
-  let newLayers = {};
+  let newLayers = { ...currentLayers };
 
-  if (item.item_type === 'bioma_background') {
-    newLayers = { ...currentLayers, background: { id: item.id, asset_url: item.asset_url } };
-  } else if (item.item_type === 'bioma_bioma') {
-    newLayers = { ...currentLayers, bioma: { id: item.id, asset_url: item.asset_url } };
+  // This can be extended with a switch statement for more item types
+  if (item.item_type === 'bioma_background' || item.item_type === 'bioma_bioma') {
+    newLayers[item.item_type.replace('bioma_', '')] = { id: item.id, asset_url: item.asset_url };
   } else {
-    return { success: false, error: "Tipo di oggetto non equipaggiabile." };
+    return { success: false, error: "This item type cannot be equipped." };
   }
 
-  // 3. Aggiorniamo il database
+  // Update the database
   const { error: updateError } = await supabase
     .from('biomes')
     .update({ equipped_layers: newLayers })
@@ -155,17 +157,78 @@ export const equipItem = async (itemId: string) => {
   return { success: true };
 };
 
+/**
+ * Signs the user out and redirects them to the homepage.
+ */
 export const signOutUser = async () => {
-  const supabase = createClient(); // Usiamo la nostra funzione helper
+  const supabase = createClient();
   const { error } = await supabase.auth.signOut();
 
   if (error) {
-    console.error("Errore durante il logout:", error.message);
-    // Potremmo voler gestire l'errore in modo più elegante in futuro
-    return;
+    console.error("Error during logout:", error.message);
+    // In a real app, you might want to return an error instead of just logging
   }
   
-  // Usiamo il redirect di Solid Router, che è gestito dal server.
-  // Questo è il modo più pulito e sicuro per reindirizzare dopo un'azione server.
+  // The idiomatic way to redirect after a server action in SolidStart
   throw redirect("/");
+};
+
+/**
+ * -----------------------------------------------------------------------------
+ * Emporio (Store) Actions
+ * -----------------------------------------------------------------------------
+ */
+
+/**
+ * Fetches all available items for sale from the game store.
+ * @returns {Promise<Tables<'game_items'>[] | null>} A promise that resolves to an array of game items or null on error.
+ */
+export const getStoreItems = async () => {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("game_items")
+    .select('*')
+    .order('rarity', { ascending: false }); // Example: order by rarity
+
+  if (error) {
+    console.error("Error fetching store items:", error.message);
+    return null;
+  }
+  return data;
+};
+
+/**
+ * Handles the purchase of an item from the store for the authenticated user.
+ * It calls a PostgreSQL function `buy_game_item` to perform the transaction securely.
+ * @param {string} itemId - The ID of the item to purchase.
+ * @returns {Promise<{success: boolean, error?: string, data?: {newSoulFragments: number, newInventoryItem: InventoryItemWithDetails}} >} An object indicating outcome and returning updated data on success.
+ */
+export const buyItem = async (itemId: string) => {
+  const event = getRequestEvent();
+  if (!event?.locals.user) {
+    return { success: false, error: "User not authenticated." };
+  }
+
+  const supabase = createClient();
+  const userId = event.locals.user.id;
+
+  // Call the database function to perform the transaction
+  const { data, error } = await supabase.rpc('buy_game_item', {
+    user_id_input: userId,
+    item_id_input: itemId,
+  }).single(); // .single() is used because our function returns a single row
+
+  if (error) {
+    // The error message from the PostgreSQL function (e.g., 'Insufficient funds') will be in `error.message`.
+    return { success: false, error: error.message };
+  }
+
+  // The function returns a structure like: { new_soul_fragments: number, new_inventory_item: jsonb }
+  // We just need to parse the JSONB for the item.
+  const resultData = {
+    newSoulFragments: data.new_soul_fragments,
+    newInventoryItem: data.new_inventory_item as InventoryItemWithDetails,
+  };
+
+  return { success: true, data: resultData };
 };
