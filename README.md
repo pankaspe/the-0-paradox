@@ -2,51 +2,52 @@
 
 ![alt text](image.png)
 
-Un sistema. Non solo un gioco.
-
-Ogni utente ottiene un **bioma** personale: un’istanza persistente all’interno di una **galassia generata proceduralmente**.  
-La mappa non è predefinita: *seed-based noise*, coordinate deterministiche, ogni pianeta replicabile ma irripetibile.
+Non è un gioco. È un **kernel** vivo.  
+Ogni utente ha un **bioma**: un microcosmo autonomo, persistente, incapsulato in una **galassia generata proceduralmente**.  
+Seed, rumore perlin, entropia controllata. Nessun bioma uguale a un altro. Tutto calcolabile, niente predefinito.
 
 ---
 
 ## Architettura
 
-Il **kernel** è stato rifattorizzato per un approccio modulare.  
-Le cronache sono **manifest JSON** serviti da *Supabase Storage*, composti da atti e nodi narrativi.  
-Ogni nodo è uno **stato di sistema** con condizioni (`has_variable`, `has_state`) e mutazioni (`set_variable`, `apply_state`).  
-Nessun dato narrativo è hardcoded. Gli aggiornamenti avvengono senza redeploy: push di nuovi asset, propagazione immediata.
+Il **kernel** è stato rifattorizzato per la mutazione dinamica dei moduli di gioco.  
+Cronache in formato **JSON manifest**, orchestrate via Supabase Storage.  
+Ogni nodo narrativo = stato del kernel.  
+Condizioni (`if_state`, `if_flag`) → Mutazioni (`set_flag`, `apply_delta`).  
+Niente hardcode. Aggiornamenti in tempo reale, push di nuovi asset, zero downtime.
 
 ---
 
 ## Persistenza e Sicurezza
 
-- **PostgreSQL** con campi `jsonb` per lo stato attivo.
-- Tabelle chiave:
-  - `active_narratives`: stato in corso.
-  - `narrative_records`: cronologia permanente.
-- **Row Level Security** abilitata.
-- Nessun accesso non autorizzato.
+- **PostgreSQL** con campi `jsonb` per snapshot dello stato.
+- Tabelle primarie:
+  - `active_narratives` — stato runtime
+  - `narrative_records` — log permanente
+- **Row Level Security** attiva.
+- Autenticazione a più livelli. Nessun token in chiaro.
 
 ---
 
 ## Generazione Contenuti
 
-**Gemini AI**, modello multimodale con *Mixture-of-Experts*.  
-Context window estesa, output coerente e tematico.  
-I prompt vengono forniti in formato strutturato; la risposta è filtrata, validata e indicizzata semanticamente.
+**LLM Gemini**, modello multimodale di nuova generazione.  
+Architettura *Mixture-of-Experts*, routing dinamico dei token, gestione context window estesa.  
+Prompt strutturati → output narrativo coerente, semantica preservata.  
+Risposte validate, normalizzate, indicizzate per retrieval veloce.
 
-Ogni cronaca restituisce:
+Ogni cronaca produce:
 - **Valuta di progressione** (`Soul Fragments`)
-- **Metriche temporali** (`Anni Bioma`)
-- **Asset rari** (avatar con hash univoco)
+- **Metriche temporali** (`Bioma Age`)
+- **Asset rari** (avatar hash univoco)
 
 ---
 
 ## Frontend e API
 
-- **SolidJS** per reattività fine-grained, evitando overhead del virtual DOM.
-- **Supabase** come backend in tempo reale.
-- Endpoints principali:
+- **SolidJS**: reattività fine-grained, riduzione latenza rispetto al virtual DOM tradizionale.
+- Backend real-time su Supabase.
+- Endpoints:
   - `/api/game/chronicles`
   - `/api/game/chronicles/:id`
   - `/api/game/chronicles/:id/progress`
@@ -55,8 +56,9 @@ Ogni cronaca restituisce:
 
 ## Visione
 
-Un **ecosistema distribuito** dove ogni scelta locale modifica l’equilibrio globale.  
-Gli avatar sono centralizzati, ma predisposti per futura migrazione **Layer-2 NFT**: proprietà on-chain, tracciabilità immutabile.
+Ecosistema distribuito, interconnesso, in cui le scelte locali impattano la galassia globale.  
+Avatar oggi centralizzati, domani **NFT Layer-2**, proprietà on-chain, tracciabilità immutabile.  
 
-Non è un semplice ambiente interattivo.  
-È un **sistema vivo**, in continua mutazione, dove le regole possono cambiare… silenziosamente.
+Non è un engine statico.  
+È un kernel che evolve.  
+E **Gemini** ne scrive la storia.
