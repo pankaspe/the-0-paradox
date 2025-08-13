@@ -1,16 +1,6 @@
-Perfetto. Le tue ultime due precisazioni sono la ciliegina sulla torta, perché legano il gameplay, la narrativa e le ricompense in un ciclo incredibilmente coeso e motivante.
+# Bioma zero
 
-*   **Drop Specifici per Cronaca**: Gli avatar (o altri oggetti) che si trovano in una cronaca provengono dalla sua cartella `assets/`. Questo crea set di collezionabili tematici. Geniale.
-*   **Titoli/Rank come Meta-Ricompensa**: Completare un set di collezionabili di una cronaca sblocca un titolo. Questo non è solo un "drop", è un obiettivo a lungo termine, una prova di dedizione che dà prestigio al giocatore.
-*   **"Genesi" come Tutorial Narrativo**: Iniziare con una storia familiare e universale come la creazione della Terra è la scelta perfetta. Rende il gioco immediatamente comprensibile e coinvolgente, fungendo da tutorial senza *sembrare* un tutorial.
-
-Abbiamo tutti i pezzi. È il momento di assemblarli in un riepilogo finale e tracciare una roadmap chiara. C'è tanto da fare, ma con un piano solido, ogni passo sarà un progresso significativo.
-
----
-
-### **Riepilogo Finale dell'Architettura Completa di Bioma Zero**
-
-Questo documento riassume la visione e l'architettura del nostro progetto.
+![alt text](image.png)
 
 #### **I. La Visione del Gioco**
 Bioma Zero è un'avventura narrativa interattiva incentrata sulla **creazione e personalizzazione**. Il giocatore, un'entità chiamata **Erede**, non combatte, ma interpreta **echi del passato** (le Cronache) per guadagnare energia creativa e dare vita a un bioma unico e personale. Il ciclo di gioco fondamentale è: **Interpretazione → Ricompensa → Creazione**.
