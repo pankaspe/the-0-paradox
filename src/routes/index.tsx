@@ -91,10 +91,11 @@ export default function HomePage() {
           transition={{ duration: 1, delay: 1, easing: [0.16, 1, 0.3, 1] }}
         >
           <A 
-            href="/login" 
+            href="https://github.com/pankaspe/bioma-zero" 
+            target="_blank" 
             class="py-4 px-10 font-bold text-abyss bg-biolume rounded-full transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-biolume/40 text-xl shadow-xl shadow-biolume/20"
           >
-            Accetta il Lascito
+            visita il progetto
           </A>
         </Motion.div>
       </main>
