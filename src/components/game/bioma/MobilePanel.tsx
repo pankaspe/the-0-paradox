@@ -5,6 +5,7 @@ import { Motion, Presence } from "solid-motionone";
 import { ItemCard, type ItemCardProps } from "./ItemCard";
 import type { EquippedLayers } from "~/types/game";
 import { FiX } from "solid-icons/fi";
+import { A } from "@solidjs/router";
 
 type ItemGroup = { type: string; name: string; items: ItemCardProps['item'][]; };
 
@@ -64,6 +65,17 @@ export const MobilePanel: Component<MobilePanelProps> = (props) => {
                 </div>
                 <div class="overflow-y-auto flex-1 pr-2">
                   <div class="grid grid-cols-4 sm:grid-cols-5 gap-4">
+                   <Show 
+                    when={group().items.length > 0}
+                    fallback={
+                      <div class="col-span-3 text-center text-ghost/60 p-8 text-sm">
+                        <p>Non possiedi nessun oggetto di tipo "{group.name}".</p>
+                        <A href="/game/emporio" class="text-biolume hover:underline mt-2 inline-block">
+                          Visita l'Emporio
+                        </A>
+                      </div>
+                    }
+                  >
                     <For each={group().items}>
                       {(item) => {
                         const layerKey = group().type.replace('bioma_', '') as keyof EquippedLayers;
@@ -79,6 +91,7 @@ export const MobilePanel: Component<MobilePanelProps> = (props) => {
                         );
                       }}
                     </For>
+                    </Show>
                   </div>
                 </div>
               </Motion.div>

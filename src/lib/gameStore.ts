@@ -21,6 +21,7 @@ interface GameStore {
   storeItems: Tables<'game_items'>[];
   isStoreLoading: boolean; // For loading store items specifically
   storeError: string | null;
+  toast: { message: string; type: 'success' | 'error' | 'info'; id: number } | null;
 }
 
 /**
@@ -34,12 +35,15 @@ const [store, setStore] = createStore<GameStore>({
   profile: null,
   isLoading: true,
   error: null,
+  toast: null,
 
   // Initial emporio state
   storeItems: [],
   isStoreLoading: true,
   storeError: null,
 });
+
+let toastTimeout: ReturnType<typeof setTimeout>;
 
 /**
  * -----------------------------------------------------------------------------
@@ -48,6 +52,24 @@ const [store, setStore] = createStore<GameStore>({
  * A collection of functions to interact with and mutate the global store.
  */
 const actions = {
+    // --- Toast Actions ---
+  showToast(message: string, type: 'success' | 'error' | 'info' = 'info') {
+    // Pulisce il timeout precedente se una notifica viene mostrata rapidamente dopo un'altra
+    clearTimeout(toastTimeout);
+
+    setStore('toast', { message, type, id: Date.now() });
+
+    // Nasconde automaticamente la notifica dopo 5 secondi
+    toastTimeout = setTimeout(() => {
+      actions.hideToast();
+    }, 5000);
+  },
+
+  hideToast() {
+    clearTimeout(toastTimeout);
+    setStore('toast', null);
+  },
+  
   // --- Core Data Loading ---
 
   /**

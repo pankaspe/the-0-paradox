@@ -4,6 +4,8 @@ import { Suspense, onMount } from "solid-js";
 import SideNav from "~/components/game/SideNav";
 import Topbar from "~/components/game/layout/Topbar";
 import { gameStore, gameStoreActions } from "~/lib/gameStore";
+import { Toast } from "~/components/ui/Toast";
+
 
 export default function GameLayout(props: RouteSectionProps) {
   // Quando il layout viene montato, lancia il caricamento dei dati
@@ -18,6 +20,7 @@ export default function GameLayout(props: RouteSectionProps) {
 
   return (
     <div class="h-screen text-ghost flex overflow-hidden">
+      <Toast />
       <SideNav />
       <div class="relative flex-1 flex flex-col w-full">
         <div class="absolute top-0 left-0 right-0 z-20 p-4 md:p-6 pointer-events-none">

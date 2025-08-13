@@ -4,6 +4,7 @@ import { type Component, For, Show, createSignal } from "solid-js";
 import { Motion, Presence } from "solid-motionone";
 import { ItemCard, type ItemCardProps } from "./ItemCard";
 import type { EquippedLayers } from "~/types/game";
+import { A } from "@solidjs/router";
 
 // Definiamo un tipo per i gruppi di oggetti che riceveremo
 type ItemGroup = { type: string; name: string; items: ItemCardProps['item'][]; };
@@ -49,6 +50,17 @@ export const DesktopPanel: Component<DesktopPanelProps> = (props) => {
                   transition={{ duration: 0.2 }}
                   class="grid grid-cols-3 gap-3"
                 >
+                 <Show 
+                    when={group.items.length > 0}
+                    fallback={
+                      <div class="col-span-3 text-center text-ghost/60 p-8 text-sm">
+                        <p>Non possiedi nessun oggetto di tipo "{group.name}".</p>
+                        <A href="/game/emporio" class="text-biolume hover:underline mt-2 inline-block">
+                          Visita l'Emporio
+                        </A>
+                      </div>
+                    }
+                  >
                   <For each={group.items}>
                     {(item) => {
                       const layerKey = group.type.replace('bioma_', '') as keyof EquippedLayers;
@@ -64,6 +76,7 @@ export const DesktopPanel: Component<DesktopPanelProps> = (props) => {
                       );
                     }}
                   </For>
+                  </Show>
                 </Motion.div>
               </Show>
             )}
