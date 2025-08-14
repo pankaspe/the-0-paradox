@@ -89,10 +89,17 @@ export const ItemCard: Component<ItemCardProps> = (props) => {
         {/* Se l'URL esiste, mostriamo l'immagine come prima */}
           <Image
             src={`${STORAGE_URL}${props.item.game_items!.asset_url}`}
-             class="w-full h-full object-cover"
+            class="w-full h-full object-cover"
             width={800}
-            height={600}
-            alt="A lovely bath"
+            height={500}
+            alt={props.item.game_items!.name}
+            priority={true}
+            layout="constrained"
+            operations={{
+                "supabase": {
+                  quality: 50,
+                }
+            }}
           />
       </Show>
       {/* --- FINE MODIFICA --- */}

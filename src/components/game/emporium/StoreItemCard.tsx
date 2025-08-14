@@ -5,9 +5,9 @@ import { Motion } from "solid-motionone";
 import { gameStore, gameStoreActions } from "~/lib/gameStore";
 import { buyItem } from "~/lib/game-actions";
 import Spinner from "~/components/ui/Spinner";
-// Importiamo il tipo Tables per allineare le props
 import type { Tables } from "~/types/supabase";
 import { Image } from "@unpic/solid";
+
 
 const rarityStyles = {
   common: { border: "rarity-border-common", text: "rarity-text-common", bg: "rarity-bg-common" },
@@ -91,9 +91,17 @@ export const StoreItemCard: Component<StoreItemCardProps> = (props) => {
         >
           <Image
             src={`${STORAGE_URL}${props.item.asset_url}`} 
-            width={800}
-            height={600}
-            class="max-h-full max-w-full object-contain" 
+            width={700}
+            height={500}
+            class="max-h-full max-w-full object-contain animate-fade-in" 
+            priority={true}
+            alt={props.item.name}
+            layout="constrained"
+            operations={{
+                "supabase": {
+                  quality: 50,
+                }
+            }}
           />
         </Show>
       </div>
