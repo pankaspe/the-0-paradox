@@ -88,48 +88,49 @@ export default function HomePage() {
       <PulsatingBackground />
       <BackgroundGlows />
 
-      <main class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-        
-        <Logo href="/login" class="mb-8" />
+        <Motion.div 
+          class="absolute inset-0 grid-overlay pointer-events-none"
+          animate={{ opacity: [0.2, 0.9] }} transition={{ duration: 3, repeat: Infinity, direction: 'alternate' }}
+         />
 
-        <Motion.div
-          class="max-w-3xl"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.5, delay: 0.5 }}
-        >
-          <p class="text-lg md:text-xl text-ghost/80 leading-relaxed">
-            Bioma Zero. Un ecosistema procedurale dove ogni guardiano custodisce il proprio bioma, vivo e in costante mutazione. Non è un’arena, non è conquista: è ingegneria narrativa, enigmi logico-linguistici intrecciati a un kernel riscritto da zero per sostenere un’evoluzione modulare. Le Cronologie — frammenti generati dal modello Gemini LLM — sono artefatti interattivi, memorie digitali che reagiscono alle tue scelte, mutano, e raccontano una storia che solo tu puoi completare.
-          </p>
-          <h2 class="text-2xl text-left font-semibold mt-8 mb-4 text-ghost/90">
-            Perchè Bioma Zero?
-          </h2>
-          <blockquote class="mt-6 border-l-4 border-ghost/40 pl-4 text-sm text-left text-ghost/80 italic leading-relaxed">
-            Una challenge personale, scrivere un sistema interamente in TypeScript. 
-            SolidJS come framework reattivo privo di Virtual DOM, Supabase per orchestrare persistenza 
-            e sincronizzazione. Gemini non è solo un assistente, ma un copilota di progettazione, debug 
-            e creazione contenuti, un secondo layer cognitivo. L’intento non è produrre un semplice gioco, 
-            ma un ambiente che mantenga la mente in stato di allenamento costante, fondendo stimolo 
-            intellettuale e immersione. Un giorno forse, oltre lo schermo, in VR. Non per moda. Perché sarà 
-            il passo successivo naturale.
-          </blockquote>
-        </Motion.div>
+        <main class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+          
+          <Logo href="/login" class="mb-8" />
 
-        <Motion.div
-          class="mt-16"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 1, easing: [0.16, 1, 0.3, 1] }}
-        >
-          <A 
-            href="https://github.com/pankaspe/bioma-zero" 
-            target="_blank" 
-            class="py-4 px-10 font-bold text-abyss bg-biolume rounded-full transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-biolume/40 text-xl shadow-xl shadow-biolume/20"
+          <Motion.div
+            class="max-w-3xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.5, delay: 0.5 }}
           >
-            visita il progetto
-          </A>
-        </Motion.div>
-      </main>
+            <p class="text-lg md:text-xl text-ghost/80 leading-relaxed">
+              Bioma Zero. Un ecosistema procedurale dove ogni player custodisce il proprio bioma, vivo e in costante mutazione. Non è un’arena, non è conquista: è ingegneria narrativa, enigmi logico-linguistici intrecciati a un kernel riscritto da zero per sostenere un’evoluzione modulare.</p>
+              <p class="text-md text-ghost/80 leading-relaxed">
+              Le Cronologie del gioco sono frammenti generati dal modello di intelligenza artificiale, Gemini LLM — Storie interattive, memorie digitali che reagiscono alle tue scelte, mutano, e raccontano una storia che solo tu puoi completare.
+            </p>
+            <h2 class="text-2xl text-left font-semibold mt-8 mb-4 text-ghost/90">
+              Perchè Bioma Zero?
+            </h2>
+            <blockquote class="mt-6 border-l-4 border-ghost/40 pl-4 text-sm text-left text-ghost/80 italic leading-relaxed">
+              Una challenge personale: costruire un intero ecosistema in TypeScript. Alla base c’è SolidJS, framework reattivo senza Virtual DOM; Supabase orchestra persistenza e sincronizzazione in tempo reale. Gemini non è solo un assistente: è il mio copilota di progettazione, debug e creazione dei contenuti. Questo progetto è stato anche un esperimento di programmazione side-to-side con Gemini: lo stesso algoritmo di Bioma Zero è stato scritto da Gemini. <br />L’obiettivo non è un semplice gioco, ma un ambiente che mantenga la mente in costante allenamento, fondendo stimolo intellettuale e immersione. Un giorno, forse oltre lo schermo, anche in VR: non per moda, ma perché sarà il passo naturale successivo.
+            </blockquote>
+          </Motion.div>
+
+          <Motion.div
+            class="mt-16"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, delay: 1, easing: [0.16, 1, 0.3, 1] }}
+          >
+            <A 
+              href="https://github.com/pankaspe/bioma-zero" 
+              target="_blank" 
+              class="py-4 px-10 font-bold text-abyss bg-biolume rounded-full transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-biolume/40 text-xl shadow-xl shadow-biolume/20"
+            >
+              visita il progetto
+            </A>
+          </Motion.div>
+        </main>
 
       <footer class="absolute bottom-6 text-center w-full">
         <p class="text-xs text-starlight/40 animate-pulse">
