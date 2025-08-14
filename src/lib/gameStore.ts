@@ -22,6 +22,8 @@ interface GameStore {
   isStoreLoading: boolean; // For loading store items specifically
   storeError: string | null;
   toast: { message: string; type: 'success' | 'error' | 'info'; id: number } | null;
+
+  isTopbarVisible: boolean;
 }
 
 /**
@@ -41,6 +43,8 @@ const [store, setStore] = createStore<GameStore>({
   storeItems: [],
   isStoreLoading: true,
   storeError: null,
+
+  isTopbarVisible: true,
 });
 
 let toastTimeout: ReturnType<typeof setTimeout>;
@@ -52,6 +56,11 @@ let toastTimeout: ReturnType<typeof setTimeout>;
  * A collection of functions to interact with and mutate the global store.
  */
 const actions = {
+
+  toggleTopbar() {
+    setStore('isTopbarVisible', (v) => !v);
+  },
+
     // --- Toast Actions ---
   showToast(message: string, type: 'success' | 'error' | 'info' = 'info') {
     // Pulisce il timeout precedente se una notifica viene mostrata rapidamente dopo un'altra

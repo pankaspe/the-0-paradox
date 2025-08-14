@@ -73,7 +73,7 @@ export default function BiomaPage() {
   const isScenePopulated = createMemo(() => equippedLayers()?.background || equippedLayers()?.bioma);
 
   return (
-    <div class="w-full h-full">
+    <div class="absolute inset-0 z-0">
       <Show when={!gameStore.isLoading} fallback={<Loader inCenter={true} />}>
         <Show when={gameStore.profile} fallback={<p class="text-red-400">{gameStore.error}</p>}>
           <div class="flex w-full h-full">
@@ -124,7 +124,7 @@ export default function BiomaPage() {
                       src={`${STORAGE_URL}${biomaLayer()!.asset_url}`}
                       alt="Nucleo" class="object-contain" 
                       layout="constrained"
-                      width={1024} height={1024} 
+                      width={1300} height={1300} 
                       priority={true}
                       onLoad={() => handleImageLoad(biomaLayer()!.asset_url!)}
                       onError={() => handleImageLoad(biomaLayer()!.asset_url!)}
