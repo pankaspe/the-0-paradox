@@ -110,13 +110,6 @@ export default function BiomaPage() {
 
               {/* 2. LAYER DEL PIANETA (NUCLEO) - LOGICA CORRETTA */}
               <div class="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none">
-                {/* 
-                  Questo Motion.div è SEMPRE nel DOM. Non viene più creato/distrutto.
-                  La sua visibilità e dimensione sono controllate reattivamente dalla prop 'animate'.
-                  Quando biomaLayer() è nullo, l'elemento è invisibile e scalato a 0 (opacity: 0, scale: 0).
-                  Quando i dati arrivano, l'elemento esegue la transizione ad opacity: 1 e scale: 0.5.
-                  Questo previene qualsiasi "salto" di layout.
-                */}
                 <Motion.div
                   initial={false} // L'animazione iniziale è ora gestita da animate
                   animate={{
@@ -129,8 +122,10 @@ export default function BiomaPage() {
                   <Show when={biomaLayer()}>
                     <Image
                       src={`${STORAGE_URL}${biomaLayer()!.asset_url}`}
-                      alt="Nucleo" class="object-contain" layout="fixed"
-                      width={1024} height={1024} priority={true}
+                      alt="Nucleo" class="object-contain" 
+                      layout="constrained"
+                      width={1024} height={1024} 
+                      priority={true}
                       onLoad={() => handleImageLoad(biomaLayer()!.asset_url!)}
                       onError={() => handleImageLoad(biomaLayer()!.asset_url!)}
                     />
