@@ -1,6 +1,6 @@
 // routes/game/bioma.tsx
 
-import { For, Show, createMemo, createSignal, onMount } from "solid-js";
+import { For, Show, createMemo, createSignal, onMount, createEffect } from "solid-js"; // 1. Importa createEffect
 import { Motion, Presence } from "solid-motionone";
 import { A } from "@solidjs/router";
 import { equipItem } from "~/lib/game-actions";
@@ -44,13 +44,16 @@ export default function BiomaPage() {
     setSavingItemId(null);
   };
 
+  // --- LOGICA REATTIVA PER I LAYER ---
   const equippedLayers = createMemo(() => gameStore.profile?.biomes[0]?.equipped_layers as EquippedLayers | null);
   const auraStyle = createMemo(() => equippedLayers()?.aura?.style_data ?? {});
   
-  // Memo specifico per il pianeta e per il suo URL, per pulizia
+  // Memo specifici per gli URL, per rendere il codice più pulito
+  const backgroundAssetUrl = createMemo(() => equippedLayers()?.background?.asset_url);
   const biomaLayer = createMemo(() => equippedLayers()?.bioma);
   const biomaAssetUrl = createMemo(() => biomaLayer()?.asset_url);
 
+  // --- LOGICA DI CARICAMENTO IMMAGINI (CORRETTA) ---
   const [loadingImages, setLoadingImages] = createSignal(new Set<string>());
   
   const handleImageLoad = (url: string) => {
@@ -61,13 +64,23 @@ export default function BiomaPage() {
     });
   };
   
-  onMount(() => {
-    // Aggiunge l'immagine del pianeta ai loading solo quando l'URL diventa disponibile
-    if (biomaAssetUrl()) {
-      setLoadingImages(prev => new Set(prev).add(biomaAssetUrl()!));
+  // 2. Usiamo createEffect per aggiungere reattivamente gli URL alla lista di caricamento.
+  // Questo effect si attiva ogni volta che 'backgroundAssetUrl' cambia.
+  createEffect(() => {
+    const url = backgroundAssetUrl();
+    if (url) {
+      // Aggiunge l'URL al Set. Se è già presente, non succede nulla.
+      setLoadingImages(prev => new Set(prev).add(url));
     }
   });
 
+  // Questo effect si attiva ogni volta che 'biomaAssetUrl' cambia.
+  createEffect(() => {
+    const url = biomaAssetUrl();
+    if (url) {
+      setLoadingImages(prev => new Set(prev).add(url));
+    }
+  });
 
   const isSceneLoading = createMemo(() => loadingImages().size > 0);
   const isScenePopulated = createMemo(() => equippedLayers()?.background || equippedLayers()?.bioma);
@@ -80,12 +93,11 @@ export default function BiomaPage() {
             
             <div class="flex-1 bg-black relative">
 
-              {/* 1. LAYER DELLO SFONDO (invariato) */}
+              {/* 1. LAYER DELLO SFONDO */}
               <Presence>
+                {/* 3. Rimuoviamo la logica di 'onMount' da qui, ora è gestita globalmente da createEffect */}
                 <For each={equippedLayers()?.background ? [equippedLayers()!.background!] : []}>
-                  {(bg) => {
-                    if (bg.asset_url) onMount(() => setLoadingImages(prev => new Set(prev).add(bg.asset_url!)));
-                    return (
+                  {(bg) => (
                       <Motion.div
                         initial={{ opacity: 0, scale: 1.05 }}
                         animate={{ opacity: 1, scale: 1, filter: ['blur(8px) brightness(50%)', 'blur(18px) brightness(75%)'] }}
@@ -95,12 +107,14 @@ export default function BiomaPage() {
                       >
                         <Image
                           src={`${STORAGE_URL}${bg.asset_url}`} alt="Sfondo" class="w-full h-full object-cover"
-                          layout="fullWidth" onLoad={() => handleImageLoad(bg.asset_url!)}
-                          onError={() => handleImageLoad(bg.asset_url!)} priority={true}
+                          layout="fullWidth" 
+                          onLoad={() => handleImageLoad(bg.asset_url!)}
+                          onError={() => handleImageLoad(bg.asset_url!)} 
+                          priority={true}
                         />
                       </Motion.div>
-                    );
-                  }}
+                    )
+                  }
                 </For>
               </Presence>
 
@@ -108,10 +122,10 @@ export default function BiomaPage() {
                 animate={{ opacity: [0.2, 0.9] }} transition={{ duration: 3, repeat: Infinity, direction: 'alternate' }}
               />
 
-              {/* 2. LAYER DEL PIANETA (NUCLEO) - LOGICA CORRETTA */}
+              {/* 2. LAYER DEL PIANETA (NUCLEO) */}
               <div class="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none">
                 <Motion.div
-                  initial={false} // L'animazione iniziale è ora gestita da animate
+                  initial={false}
                   animate={{
                     opacity: biomaLayer() ? 1 : 0,
                     scale: biomaLayer() ? 0.5 : 0,
@@ -133,7 +147,7 @@ export default function BiomaPage() {
                 </Motion.div>
               </div>
 
-              {/* 3. MESSAGGIO DI FALLBACK (invariato) */}
+              {/* 3. MESSAGGIO DI FALLBACK */}
               <Show when={!isScenePopulated() && !gameStore.isLoading}>
                 <Motion.div class="absolute inset-0 flex flex-col items-center justify-center text-center p-8"
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
@@ -145,7 +159,7 @@ export default function BiomaPage() {
                 </Motion.div>
               </Show>
 
-              {/* 4. LOADER DELLA SCENA (invariato) */}
+              {/* 4. LOADER DELLA SCENA */}
               <Presence>
                 <Show when={isSceneLoading()}>
                   <Motion.div class="absolute inset-0 z-10 bg-abyss/80 backdrop-blur-sm flex items-center justify-center"

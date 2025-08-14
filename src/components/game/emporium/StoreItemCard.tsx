@@ -8,6 +8,13 @@ import Spinner from "~/components/ui/Spinner";
 import type { Tables } from "~/types/supabase";
 import { Image } from "@unpic/solid";
 
+// --- NUOVO MINI-COMPONENTE ---
+// Un loader specifico per le immagini. Apparirà centrato e con uno sfondo semi-trasparente.
+const ImageLoader: Component = () => (
+  <div class="absolute inset-0 flex items-center justify-center bg-abyss/50 backdrop-blur-sm">
+    <Spinner class="w-8 h-8 text-biolume" />
+  </div>
+);
 
 const rarityStyles = {
   common: { border: "rarity-border-common", text: "rarity-text-common", bg: "rarity-bg-common" },
@@ -16,7 +23,6 @@ const rarityStyles = {
   seasonal: { border: "rarity-border-seasonal", text: "rarity-text-seasonal", bg: "rarity-bg-seasonal" },
 };
 
-// L'interfaccia ora usa il tipo corretto `Tables<'game_items'>`
 export interface StoreItemCardProps {
   item: Tables<'game_items'>;
 }
@@ -55,54 +61,37 @@ export const StoreItemCard: Component<StoreItemCardProps> = (props) => {
   };
   const styles = () => rarityStyles[itemRarity()];
 
-    // --- AGGIUNGIAMO LA LOGICA PER IL COLORE ANCHE QUI ---
-  const auraMainColor = createMemo(() => {
-    const styleData = props.item.style_data as any;
-    if (styleData?.filter && typeof styleData.filter === 'string') {
-      const match = styleData.filter.match(/rgba?\(.+?\)/);
-      if (match) {
-        return match[0];
-      }
-    }
-    return 'rgba(110, 231, 183, 0.7)';
-  });
-
   return (
     <div class={`bg-abyss/90 border rounded-lg overflow-hidden flex flex-col transition-all duration-300 ${styles().border} ${userOwnsItem() ? 'opacity-50' : 'hover:border-starlight/50 hover:bg-abyss'}`}>
-      <div class="h-40 bg-starlight/5 flex items-center justify-center p-4">
+      
+      {/* --- MODIFICA 1: Aggiungiamo 'relative' qui --- */}
+      {/* Questo serve per posizionare correttamente il loader al suo interno. */}
+      <div class="relative h-40 bg-starlight/5 flex items-center justify-center p-4">
         <Show 
           when={props.item.asset_url}
           fallback={
             <Motion.div 
               class="w-20 h-20 rounded-full bg-biolume/30"
-              animate={{
-                scale: [1, 1.1, 1],
-                opacity: [0.7, 1, 0.7],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                easing: "ease-in-out",
-              }}
+              animate={{ scale: [1, 1.1, 1], opacity: [0.7, 1, 0.7] }}
+              transition={{ duration: 2, repeat: Infinity, easing: "ease-in-out" }}
             >
               <div class="w-full h-full rounded-full border-2 border-biolume" />
             </Motion.div>
           }
         >
+          {/* --- MODIFICA 2: Il Loader è ora un figlio di <Image> --- */}
+          {/* Questo <ImageLoader> viene mostrato automaticamente mentre l'immagine
+              specificata in 'src' sta caricando, e nascosto al termine. */}
           <Image
             src={`${STORAGE_URL}${props.item.asset_url}`} 
             width={700}
             height={500}
             class="max-h-full max-w-full object-contain animate-fade-in" 
-            priority={true}
             alt={props.item.name}
             layout="constrained"
-            operations={{
-                "supabase": {
-                  quality: 50,
-                }
-            }}
-          />
+          >
+            <ImageLoader />
+          </Image>
         </Show>
       </div>
 
