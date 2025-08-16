@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "vinxi dev",
     "build": "vinxi build",
-    "start": "vinxi start"
+    "start": "vinxi start",
+    "seed": "tsx ./scripts/seed.ts"
   },
   "dependencies": {
     "@solidjs/meta": "^0.29.4",
@@ -24,6 +25,7 @@
     "node": ">=22"
   },
   "devDependencies": {
-    "supabase": "^2.33.9"
+    "supabase": "^2.33.9",
+    "tsx": "^4.20.4"
   }
 }

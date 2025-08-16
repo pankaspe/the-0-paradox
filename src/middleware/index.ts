@@ -31,7 +31,7 @@ export default createMiddleware({
     // 2. CASO A: Utente loggato che prova ad andare su /login o /register
     if (isUserLoggedIn && isAuthRoute) {
       // Reindirizzalo via, non ha senso che sia qui.
-      return redirect('/game/dashboard');
+      return redirect('/game/bioma');
     }
 
     // 3. CASO B: Utente NON loggato che prova ad andare in una rotta di gioco

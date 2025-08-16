@@ -1,74 +1,31 @@
-// src/routes/index.tsx
-
 import { A } from "@solidjs/router";
 import { type Component } from "solid-js";
 import { Motion } from "solid-motionone";
-import { Image } from "@unpic/solid"; // Importiamo il componente Image
-
 import { Logo } from "~/components/ui/Logo";
 
 /**
- * PulsatingBackground Component
+ * BackgroundGlows Component
  * -----------------------------
- * Crea uno sfondo a schermo intero con un'immagine che pulsa e si sfuoca lentamente.
- */
-const PulsatingBackground: Component = () => {
-  return (
-    // Il contenitore principale dell'animazione. Si posiziona dietro a tutto (-z-20)
-    // e si estende a tutto lo schermo.
-    <Motion.div 
-      class="absolute inset-0 w-full h-full -z-20 overflow-hidden"
-      // Definiamo l'animazione
-      animate={{
-        // Anima la scala da 1 (dimensione normale) a 1.03 (leggermente ingrandita) e ritorno
-        scale: [1, 1.09, 1],
-        // Anima anche la sfuocatura per un effetto più sognante
-        filter: ['blur(8px)', 'blur(18px)', 'blur(8px)']
-      }}
-      // Definiamo le proprietà della transizione
-      transition={{
-        duration: 20,         // L'animazione completa dura 20 secondi
-        repeat: Infinity,     // Si ripete all'infinito
-        easing: 'ease-in-out' // Animazione fluida
-      }}
-    >
-      <Image
-        src="/screenshot.jpeg" // L'immagine deve essere nella cartella /public
-        alt="Sfondo del bioma"
-        class="w-full h-full object-cover" // Copre l'intero contenitore
-        layout="fullWidth"
-        priority={true} // Diamo priorità al caricamento di questa immagine
-      />
-    </Motion.div>
-  );
-};
-
-
-/**
- * BackgroundGlows Component (invariato ma con z-index modificato)
- * -------------------------------------------------------------
+ * Un'animazione di luce soffusa e organica.
  */
 const BackgroundGlows: Component = () => {
   return (
-    // Lo mettiamo a -z-10, così sta SOPRA l'immagine di sfondo ma SOTTO il testo.
-    <div class="absolute inset-0 -z-10 overflow-hidden">
+    <div class="absolute inset-0 -z-10 overflow-hidden bg-abyss">
       <Motion.div
-        class="absolute -top-1/4 -left-1/4 w-3/4 h-3/4 bg-radial-gradient from-biolume/20 to-transparent blur-3xl"
+        class="absolute -top-1/4 -left-1/4 w-3/4 h-3/4 bg-radial-gradient from-biolume/15 to-transparent blur-3xl"
         animate={{
           x: ["0%", "20%", "0%", "-10%", "0%"],
           y: ["0%", "-10%", "15%", "5%", "0%"],
-          scale: [1, 1.05, 1, 0.95, 1],
         }}
-        transition={{ duration: 20, repeat: Infinity }}
+        transition={{ duration: 40, repeat: Infinity, easing: 'linear' }}
       />
       <Motion.div
-        class="absolute -bottom-1/4 -right-1/4 w-3/4 h-3/4 bg-radial-gradient from-starlight/15 to-transparent blur-3xl"
+        class="absolute -bottom-1/4 -right-1/4 w-3/4 h-3/4 bg-radial-gradient from-starlight/10 to-transparent blur-3xl"
         animate={{
           x: ["0%", "-15%", "5%", "10%", "0%"],
           y: ["0%", "10%", "-15%", "-5%", "0%"],
-          scale: [1, 0.95, 1, 1.05, 1],
         }}
-        transition={{ duration: 25, repeat: Infinity, delay: 5 }}
+        transition={{ duration: 50, repeat: Infinity, easing: 'linear', delay: 5 }}
       />
     </div>
   );
@@ -78,63 +35,57 @@ const BackgroundGlows: Component = () => {
 /**
  * HomePage Component
  * ------------------
- * Landing page con sfondo animato e contenuti testuali.
+ * La landing page, riscritta per riflettere la nuova visione del gioco.
  */
 export default function HomePage() {
   return (
-    // Aggiungiamo bg-abyss qui come colore di fallback mentre l'immagine carica
     <div class="h-screen w-screen overflow-hidden relative text-ghost">
-      {/* Inseriamo i nostri due componenti di sfondo */}
-      <PulsatingBackground />
       <BackgroundGlows />
 
-        <Motion.div 
-          class="absolute inset-0 grid-overlay pointer-events-none"
-          animate={{ opacity: [0.2, 0.9] }} transition={{ duration: 3, repeat: Infinity, direction: 'alternate' }}
-         />
+      <main class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+        
+        <A href="/login" class="mb-8" title="Inizia la tua Genesi">
+          Bioma Zero
+        </A>
 
-        <main class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+        <Motion.div
+          class="max-w-3xl"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.5, delay: 0.5 }}
+        >
+          {/* --- TESTO NARRATIVO AGGIORNATO --- */}
+          <p class="text-lg md:text-xl text-ghost/80 leading-relaxed">
+            Inizia come una scintilla nel vuoto. Non c'è vittoria, non c'è sconfitta. C'è solo una scelta, poi un'altra. Ogni decisione plasma il patrimonio genetico del tuo bioma, scrivendo una storia unica nell'universo. Non sei solo un giocatore: sei un progenitore, un'architetto di vita.
+          </p>
+          <p class="mt-4 text-md text-ghost/70 leading-relaxed">
+            Bioma Zero è un'esperienza narrativa in cui la tua eredità è il tuo punteggio. Coltiva un ecosistema, guidalo attraverso le ere cosmiche e, quando il suo tempo giunge al culmine, fallo collassare in una supernova. Il tuo sacrificio lascerà un'impronta indelebile nella galassia condivisa, influenzando i biomi vicini e ispirando le generazioni future.
+          </p>
           
-          <Logo href="/login" class="mb-8" />
+          {/* --- SEZIONE "WHY" AGGIORNATA --- */}
+          <blockquote class="mt-12 border-l-4 border-ghost/40 pl-4 text-sm text-left text-ghost/80 italic leading-relaxed">
+            Questo progetto nasce da una domanda: un gioco può essere uno strumento di riflessione? Ho usato SolidJS per la sua reattività pura e Supabase per costruire un universo persistente. L'intelligenza artificiale non è un orpello: è un partner creativo, un demiurgo che genera gli eventi cosmici che tutti i giocatori condividono. Ogni riga di codice, ogni scelta narrativa, è un passo verso un'esperienza che non vuole solo intrattenere, ma lasciare una domanda: quale eredità sceglierai di essere?
+          </blockquote>
+        </Motion.div>
 
-          <Motion.div
-            class="max-w-3xl"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1.5, delay: 0.5 }}
+        <Motion.div
+          class="mt-16"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1, delay: 1, easing: [0.16, 1, 0.3, 1] }}
+        >
+          <A 
+            href="/login" 
+            class="py-4 px-10 font-bold text-abyss bg-biolume rounded-full transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-biolume/40 text-xl shadow-xl shadow-biolume/20"
           >
-            <p class="text-lg md:text-xl text-ghost/80 leading-relaxed">
-              Bioma Zero. Un ecosistema procedurale dove ogni player custodisce il proprio bioma, vivo e in costante mutazione. Non è un’arena, non è conquista: è ingegneria narrativa, enigmi logico-linguistici intrecciati a un kernel riscritto da zero per sostenere un’evoluzione modulare.</p>
-              <p class="text-md text-ghost/80 leading-relaxed">
-              Le Cronologie del gioco sono frammenti generati dal modello di intelligenza artificiale, Gemini LLM — Storie interattive, memorie digitali che reagiscono alle tue scelte, mutano, e raccontano una storia che solo tu puoi completare.
-            </p>
-            <h2 class="text-2xl text-left font-semibold mt-8 mb-4 text-ghost/90">
-              Perchè Bioma Zero?
-            </h2>
-            <blockquote class="mt-6 border-l-4 border-ghost/40 pl-4 text-sm text-left text-ghost/80 italic leading-relaxed">
-              Una challenge personale: costruire un intero ecosistema in TypeScript. Alla base c’è SolidJS, framework reattivo senza Virtual DOM; Supabase orchestra persistenza e sincronizzazione in tempo reale. Gemini non è solo un assistente: è il mio copilota di progettazione, debug e creazione dei contenuti. Questo progetto è stato anche un esperimento di programmazione side-to-side con Gemini: lo stesso algoritmo di Bioma Zero è stato scritto da Gemini. <br />L’obiettivo non è un semplice gioco, ma un ambiente che mantenga la mente in costante allenamento, fondendo stimolo intellettuale e immersione. Un giorno, forse oltre lo schermo, anche in VR: non per moda, ma perché sarà il passo naturale successivo.
-            </blockquote>
-          </Motion.div>
-
-          <Motion.div
-            class="mt-16"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 1, easing: [0.16, 1, 0.3, 1] }}
-          >
-            <A 
-              href="https://github.com/pankaspe/bioma-zero" 
-              target="_blank" 
-              class="py-4 px-10 font-bold text-abyss bg-biolume rounded-full transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-biolume/40 text-xl shadow-xl shadow-biolume/20"
-            >
-              visita il progetto
-            </A>
-          </Motion.div>
-        </main>
+            Inizia la Genesi
+          </A>
+        </Motion.div>
+      </main>
 
       <footer class="absolute bottom-6 text-center w-full">
         <p class="text-xs text-starlight/40 animate-pulse">
-          L'eco attende...
+          L'universo attende la tua impronta...
         </p>
       </footer>
     </div>

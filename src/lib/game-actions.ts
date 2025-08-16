@@ -5,8 +5,7 @@
 import { getRequestEvent } from "solid-js/web";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "~/types/supabase";
-import { redirect } from "@solidjs/router";
-import type { InventoryItemWithDetails } from "~/types/game";
+import type { InventoryItemWithDetails, ProfileWithBiomes } from "~/types/game";
 
 /**
  * Helper to create a Supabase server client.
@@ -30,28 +29,188 @@ function createClient() {
 }
 
 /**
- * Fetches all essential game data for the authenticated user.
+ * Carica lo stato iniziale del gioco per l'utente.
+ * Include il profilo, il bioma attivo e il PRIMO evento disponibile.
  */
-export const getInitialGameData = async () => {
+export const getInitialGameState = async () => {
+  console.log("[GAME_ACTION] 1. Avvio di getInitialGameState...");
   const event = getRequestEvent();
-  if (!event?.locals.user) return null;
-  const supabase = createClient();
-  const userId = event.locals.user.id;
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select(`*, biomes(*), inventory(*, game_items(*))`)
-    .eq('id', userId)
-    .single();
-  if (error) {
-    console.error("Error in getInitialGameData:", error.message);
+  if (!event?.locals.user) {
+    console.error("[GAME_ACTION] ERRORE: Utente non autenticato.");
     return null;
   }
-  return profile;
+  
+  const supabase = createClient();
+  const userId = event.locals.user.id;
+  console.log(`[GAME_ACTION] 2. Utente ${userId} autenticato. Caricamento profilo...`);
+
+  // 1. Carica il profilo e il bioma attivo
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select(`
+      *,
+      biomes(*),
+      inventory(*, game_items(*))
+    `)
+    .eq('id', userId)
+    .single();
+    
+  if (profileError || !profile) {
+    console.error("[GAME_ACTION] ERRORE durante il caricamento del profilo:", profileError?.message);
+    return null;
+  }
+  console.log("[GAME_ACTION] 3. Profilo caricato. Caricamento evento iniziale...");
+
+  // 2. Trova il primo evento del gioco
+  const { data: initialEvent, error: eventError } = await supabase
+    .from("events")
+    .select(`*, choices(*, choice_outcomes(*))`)
+    .eq('id', 'era1_scintilla_primordiale')
+    .single();
+
+  if (eventError || !initialEvent) {
+    console.error("[GAME_ACTION] ERRORE durante il caricamento dell'evento iniziale:", eventError?.message);
+    return null;
+  }
+  console.log("[GAME_ACTION] 4. Evento iniziale caricato. Dati pronti per essere inviati.");
+
+  return { profile: profile as ProfileWithBiomes, currentEvent: initialEvent };
 };
 
 /**
- * Updates the username for the authenticated user.
+ * La funzione CUORE del gioco. Processa la scelta di un utente.
+ * È una versione semplificata. La renderemo transazionale con una Edge Function in futuro.
+ * @param choiceId L'ID della scelta fatta dall'utente.
  */
+export const makeChoice = async (choiceId: string) => {
+  const event = getRequestEvent();
+  if (!event?.locals.user) return { success: false, error: "Not authenticated." };
+  
+  const supabase = createClient();
+  const userId = event.locals.user.id;
+
+  try {
+   const { data: outcomes, error: outcomesError } = await supabase.from('choice_outcomes').select('*').eq('choice_id', choiceId);
+    if (outcomesError) throw new Error(`DB Error fetching outcomes: ${outcomesError.message}`);
+    if (!outcomes || outcomes.length === 0) throw new Error(`No outcomes found for choice ${choiceId}`);
+
+    // 2. Calcoliamo il costo energetico. I costi sono valori negativi (es. -5),
+    //    quindi usiamo Math.abs() per ottenere il costo positivo (5).
+    const energyOutcome = outcomes.find(o => o.parameter === 'energy');
+    const energyCost = energyOutcome ? Math.abs(energyOutcome.value || 0) : 0;
+
+    // 3. Recuperiamo il profilo dell'utente per controllare la sua energia attuale.
+    const { data: currentProfile, error: profileCheckError } = await supabase.from('profiles').select('energy').eq('id', userId).single();
+    if (profileCheckError || !currentProfile) throw new Error("Could not verify user's energy.");
+
+    // 4. ESEGUIAMO IL CONTROLLO DI SICUREZZA
+    if (currentProfile.energy < energyCost) {
+      // Se l'energia non è sufficiente, fermiamo tutto e restituiamo un errore tematico.
+      return { 
+        success: false, 
+        error: "Non possiedi l'energia vitale necessaria. Il tuo bioma deve recuperare la sua essenza prima di poter compiere questa scelta." 
+      };
+    }
+
+    // 1. Carichiamo SEPARATAMENTE il profilo e il bioma
+    const { data: profile, error: profileError } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    if (profileError || !profile) throw new Error("Active profile not found.");
+
+    const { data: biome, error: biomeError } = await supabase.from('biomes').select('*').eq('owner_id', userId).single();
+    if (biomeError || !biome) throw new Error("Active biome not found.");
+    
+    // 2. Applichiamo gli outcomes distinguendo la tabella di destinazione
+    for (const outcome of outcomes) {
+      if (outcome.outcome_type === 'MODIFY_PARAM' && outcome.parameter && outcome.value != null) {
+        // SE il parametro è 'energy', modifichiamo l'oggetto 'profile'
+        if (outcome.parameter === 'energy') {
+          profile.energy += outcome.value;
+        } 
+        // ALTRIMENTI, modifichiamo l'oggetto 'biome'
+        else {
+          (biome as any)[outcome.parameter] += outcome.value;
+        }
+      } 
+      else if (outcome.outcome_type === 'GAIN_TRAIT' && outcome.trait_id && outcome.value != null) {
+        const { error: rpcError } = await supabase.rpc('increment_user_trait', {
+          p_trait_id: outcome.trait_id,
+          p_increment_value: outcome.value
+        });
+
+        if (rpcError) console.error("Error calling increment_user_trait RPC:", rpcError);
+      }
+    }
+    
+    // 3. Eseguiamo due chiamate di UPDATE separate, una per ogni tabella
+    const { error: updateProfileError } = await supabase.from('profiles').update({ energy: profile.energy }).eq('id', userId);
+    if (updateProfileError) throw new Error(`DB Error on profile update: ${updateProfileError.message}`);
+
+    const { error: updateBiomeError } = await supabase.from('biomes').update(biome).eq('id', biome.id);
+    if (updateBiomeError) throw new Error(`DB Error on biome update: ${updateBiomeError.message}`);
+
+    // Logica per il prossimo evento (invariata)
+    const { data: nextEvent, error: nextEventError } = await supabase.from("events").select(`*, choices(*, choice_outcomes(*))`).eq('id', 'era1_scintilla_primordiale').single();
+    if(nextEventError) throw new Error(`DB Error on next event fetch: ${nextEventError.message}`);
+
+    const choiceMade = await supabase.from('choices').select('feedback_narrative').eq('id', choiceId).single();
+
+    return { 
+      success: true, 
+      feedbackNarrative: choiceMade.data?.feedback_narrative ?? null,
+      updatedBiome: biome,
+      updatedProfile: profile,
+      nextEvent: nextEvent 
+    };
+
+  } catch (err: any) {
+    console.error("Error in makeChoice:", err.message);
+    return { success: false, error: err.message };
+  }
+};
+
+
+/** sign out user **/
+export const signOutUser = async () => {
+  const supabase = createClient();
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    console.error("Error during logout:", error.message);
+    return { success: false, error: error.message };
+  }
+  return { success: true };
+};
+
+
+/** update bioma name */
+export const updateBiomeName = async (newName: string) => {
+  const event = getRequestEvent();
+  if (!event?.locals.user) { return { success: false, error: "User not authenticated." }; }
+  if (!newName || newName.length < 3) { return { success: false, error: "Biome name must be at least 3 characters long." }; }
+
+  const supabase = createClient();
+  const userId = event.locals.user.id;
+
+  const { data: biome, error: biomeError } = await supabase
+    .from('biomes')
+    .select('id')
+    .eq('owner_id', userId)
+    .eq('is_active', true)
+    .single();
+
+  if (biomeError || !biome) { return { success: false, error: "Active biome not found." }; }
+
+  const { error } = await supabase
+    .from('biomes')
+    .update({ bioma_name: newName })
+    .eq('id', biome.id);
+  
+  if (error) { return { success: false, error: "Database error: " + error.message }; }
+
+  return { success: true };
+};
+
+
+/** update username */
 export const updateUsername = async (newUsername: string) => {
   const event = getRequestEvent();
   if (!event?.locals.user) { return { success: false, error: "User not authenticated." }; }
@@ -66,115 +225,27 @@ export const updateUsername = async (newUsername: string) => {
   return { success: true };
 };
 
-/**
- * Equips a specific item to the user's active biome.
- * This is now updated to handle 'aura' items and their 'style_data'.
- */
-export const equipItem = async (itemId: string) => {
+/** equip avatar */
+export const equipAvatar = async (avatarId: string) => {
   const event = getRequestEvent();
-  if (!event?.locals.user) return { success: false, error: "Not authenticated." };
-
+  if (!event?.locals.user) {
+    return { success: false, error: "Not authenticated." };
+  }
+  
   const supabase = createClient();
   const userId = event.locals.user.id;
 
-  // Fetch item details and the user's active biome in parallel
-  const [itemRes, biomeRes] = await Promise.all([
-    supabase.from('game_items').select('*').eq('id', itemId).single(),
-    supabase.from('biomes').select('*').eq('owner_id', userId).eq('is_active', true).single()
-  ]);
-
-  if (itemRes.error || !itemRes.data || biomeRes.error || !biomeRes.data) {
-    return { success: false, error: "Item or biome not found." };
-  }
-
-  const item = itemRes.data;
-  const biome = biomeRes.data;
+  // Esegui l'update nella tabella dei profili
+  const { error } = await supabase
+    .from('profiles')
+    .update({ active_avatar_id: avatarId })
+    .eq('id', userId);
   
-  const currentLayers = (biome.equipped_layers as any) || {};
-  let newLayers = { ...currentLayers };
-
-  // This logic is now flexible enough for background, bioma, and aura
-  const itemTypeKey = item.item_type.replace('bioma_', '');
-  
-  if (itemTypeKey === 'background' || itemTypeKey === 'bioma' || itemTypeKey === 'aura') {
-    // Construct the layer object, including the new style_data field.
-    // TypeScript will know this field exists after you regenerate the types.
-    newLayers[itemTypeKey] = { 
-      id: item.id, 
-      asset_url: item.asset_url,
-      style_data: item.style_data // This line will be valid after `npx supabase gen types...`
-    };
-  } else {
-    return { success: false, error: "This item type cannot be equipped to a biome." };
-  }
-
-  // Update the database
-  const { error: updateError } = await supabase
-    .from('biomes')
-    .update({ equipped_layers: newLayers })
-    .eq('id', biome.id);
-  
-  if (updateError) {
-    return { success: false, error: updateError.message };
-  }
-
-  return { success: true };
-};
-
-/**
- * Sets the active avatar for the authenticated user.
- */
-export const equipAvatar = async (itemId: string) => {
-  const event = getRequestEvent();
-  if (!event?.locals.user) { return { success: false, error: "User not authenticated." }; }
-  const supabase = createClient();
-  const { error } = await supabase.from('profiles').update({ active_avatar_id: itemId }).eq('id', event.locals.user.id);
-  if (error) { return { success: false, error: "Database error: " + error.message }; }
-  return { success: true };
-};
-
-/**
-  * Signs the user out. Returns a status object for the client to handle navigation.
-  */
-export const signOutUser = async () => {
-  const supabase = createClient();
-  const { error } = await supabase.auth.signOut();
   if (error) {
-    console.error("Error during logout:", error.message);
-    return { success: false, error: error.message };
+    console.error("Error equipping avatar:", error.message);
+    return { success: false, error: "Database error: " + error.message };
   }
+
   return { success: true };
 };
 
-/**
- * Fetches all available items for sale from the game store.
- */
-export const getStoreItems = async () => {
-  const supabase = createClient();
-  const { data, error } = await supabase.from("game_items").select('*').order('rarity', { ascending: false });
-  if (error) {
-    console.error("Error fetching store items:", error.message);
-    return null;
-  }
-  return data;
-};
-
-/**
- * Handles the purchase of an item by calling the `buy_game_item` PostgreSQL function.
- */
-export const buyItem = async (itemId: string) => {
-  const event = getRequestEvent();
-  if (!event?.locals.user) { return { success: false, error: "User not authenticated." }; }
-  const supabase = createClient();
-  const userId = event.locals.user.id;
-  const { data, error } = await supabase.rpc('buy_game_item', {
-    user_id_input: userId,
-    item_id_input: itemId,
-  }).single();
-  if (error) { return { success: false, error: error.message }; }
-  const resultData = {
-    newSoulFragments: data.new_soul_fragments,
-    newInventoryItem: data.new_inventory_item as InventoryItemWithDetails,
-  };
-  return { success: true, data: resultData };
-};

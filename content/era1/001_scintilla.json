@@ -1,0 +1,28 @@
+{
+  "eventId": "era1_scintilla_primordiale",
+  "era": 1,
+  "narrative": "Il tuo bioma primordiale è un'eco vibrante, un'infinitesima scintilla di potenziale. Per iniziare il tuo viaggio, devi decidere se vibrare in armonia con le onde o resistere alle forze del caos.",
+  "entryConditions": null,
+  "choices": [
+    {
+      "choiceId": "cho_scintilla_armonia",
+      "text": "Vibrare in armonia con le onde.",
+      "feedbackNarrative": "Una risonanza calma pervade il tuo nucleo. Senti una connessione con il flusso dell'universo. Nasce una consapevolezza basata sull'equilibrio.",
+      "outcomes": [
+        { "type": "MODIFY_PARAM", "param": "energy", "value": -5 },
+        { "type": "MODIFY_PARAM", "param": "vitality", "value": 1 },
+        { "type": "GAIN_TRAIT", "traitId": "harmonious", "value": 1 }
+      ]
+    },
+    {
+      "choiceId": "cho_scintilla_resist",
+      "text": "Resistere alle forze del caos.",
+      "feedbackNarrative": "Ti contrai, indurendo la tua essenza contro il disordine. Una forza interiore, ostinata e resiliente, prende forma. La tua esistenza si definisce per opposizione.",
+      "outcomes": [
+        { "type": "MODIFY_PARAM", "param": "energy", "value": -5 },
+        { "type": "MODIFY_PARAM", "param": "resistance", "value": 1 },
+        { "type": "GAIN_TRAIT", "traitId": "defiant", "value": 1 }
+      ]
+    }
+  ]
+}

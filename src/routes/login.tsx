@@ -12,7 +12,7 @@ export default function LoginPage() {
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
       // Se c'è una sessione, l'utente è loggato. Reindirizzalo.
-      navigate("/game/dashboard", { replace: true });
+      navigate("/game/bioma", { replace: true });
     }
   });
 
@@ -34,7 +34,7 @@ export default function LoginPage() {
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email: email(), password: password() });
         if (error) throw error;
-        window.location.href = "/game/dashboard";
+        window.location.href = "/game/bioma";
       }
     } catch (error: any) {
       alert(error.error_description || error.message);
