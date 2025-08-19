@@ -14,7 +14,7 @@ export function AvatarSelectionDropdown(props: AvatarSelectionDropdownProps) {
   const FALLBACK_AVATAR = '/game/base_avatar.svg';
 
   const availableAvatars = createMemo(() => 
-    (props.inventory || []).filter(item => item.game_items?.item_type === 'avatar')
+    (props.inventory || []).filter(item => item.game_items?.item_type === 'AVATAR')
   );
 
   return (
@@ -51,8 +51,11 @@ export function AvatarSelectionDropdown(props: AvatarSelectionDropdownProps) {
               >
                 <Image
                   src={item.game_items?.asset_url ? `${STORAGE_URL}${item.game_items.asset_url}` : FALLBACK_AVATAR}
-                  height={64} width={64} alt={item.game_items?.name || 'Avatar'}
+                  height={64} 
+                  width={64} 
+                  alt={item.game_items?.name || 'Avatar'}
                   class="w-full h-full object-cover"
+                  priority
                 />
               </button>
             )}

@@ -1,20 +1,26 @@
-import { type Component, Show, createSignal, onMount, onCleanup, createMemo  } from "solid-js";
+import { type Component, Show, createSignal, onMount, onCleanup, createMemo } from "solid-js";
+import { isServer } from "solid-js/web";
 import { gameStore, gameStoreActions } from "~/lib/gameStore";
-import { updateUsername, updateBiomeName } from "~/lib/game-actions";
-import { InlineEdit } from "~/components/ui/InLineEdit";
+import { themeStore, themeStoreActions } from "~/lib/themeStore";
 import { Image } from "@unpic/solid";
-import { IoFlashOutline, IoLogOutOutline } from "solid-icons/io";
-import { TbHeart, TbPlant2, TbShield, TbBrain } from 'solid-icons/tb';
-// --- NUOVI IMPORT ---
+// --- Importiamo le nuove icone ---
+import { 
+  IoFlashOutline, 
+  IoLogOutOutline, 
+  IoMoonOutline, 
+  IoSunnyOutline,
+  IoShieldOutline,     // Per Resilience
+  IoDiscOutline,      // Per Acumen
+  IoSearchOutline,     // Per Curiosity
+  IoEyeOutline         // Per Concentration
+} from "solid-icons/io";
 import { Presence } from "solid-motionone";
 import { AvatarSelectionDropdown } from "./AvatarSelectionDropdown";
-import { isServer } from "solid-js/web";
+import { updateUsername } from "~/lib/game-actions";
+import { InlineEdit } from "~/components/ui/InLineEdit";
 
 const Topbar: Component = () => {
-  // Deriviamo i segnali in modo sicuro
   const profile = () => gameStore.profile;
-  const activeBiome = () => gameStore.profile?.biomes[0];
-
   const [isAvatarDropdownOpen, setIsAvatarDropdownOpen] = createSignal(false);
   let avatarMenuRef: HTMLDivElement | undefined;
 
@@ -30,13 +36,10 @@ const Topbar: Component = () => {
 
   const activeAvatarUrl = createMemo(() => {
     const FALLBACK_AVATAR = '/game/base_avatar.svg';
-    const currentProfile = profile(); // Accediamo al segnale una sola volta
-    if (!currentProfile) return FALLBACK_AVATAR;
+    const p = profile();
+    if (!p) return FALLBACK_AVATAR;
 
-    const avatarId = currentProfile.active_avatar_id;
-    if (!avatarId) return FALLBACK_AVATAR;
-
-    const inventoryItem = currentProfile.inventory.find(i => i.item_id === avatarId);
+    const inventoryItem = p.inventory.find(i => i.item_id === p.active_avatar_id);
     const assetUrl = inventoryItem?.game_items?.asset_url;
     
     return assetUrl 
@@ -44,7 +47,6 @@ const Topbar: Component = () => {
       : FALLBACK_AVATAR;
   });
 
-  // Handler per salvare l'username
   const handleSaveUsername = async (newName: string) => {
     const originalName = profile()?.username || "";
     if (newName === originalName) return true;
@@ -61,36 +63,19 @@ const Topbar: Component = () => {
     return true;
   };
 
-  // Handler per salvare il nome del bioma
-  const handleSaveBiomeName = async (newName: string) => {
-    const originalName = activeBiome()?.bioma_name || "";
-    if (newName === originalName) return true;
-
-    gameStoreActions.updateBiomeName(newName);
-    const result = await updateBiomeName(newName);
-
-    if (!result.success) {
-      gameStoreActions.showToast(result.error || "Errore", 'error');
-      gameStoreActions.revertBiomeName(originalName);
-      return false;
-    }
-    gameStoreActions.showToast("Nome Bioma aggiornato!", 'success');
-    return true;
-  };
-
   return (
-    <header class="w-full h-16 flex-shrink-0 bg-abyss/95 backdrop-blur-sm border-b border-starlight/10 flex items-center justify-between px-4 sm:px-6 z-10">
-      
+    <header class="fixed top-0 left-0 right-0 h-16 bg-surface/80 backdrop-blur-sm border-b border-border flex items-center justify-between px-4 sm:px-6 z-50">
       <Show when={profile()} keyed>
         {p => (
           <>
-            <div class="flex items-center gap-4 w-1/3">
-              <div class="relative flex-shrink-0" ref={avatarMenuRef}>
+            {/* === SEZIONE SINISTRA: Identità Utente === */}
+            <div class="flex items-center gap-3">
+              <div class="relative" ref={avatarMenuRef}>
                 <button
                   onClick={() => setIsAvatarDropdownOpen(o => !o)}
-                  class="w-8 h-8 rounded-full overflow-hidden border border-starlight/50 hover:border-biolume transition-colors focus:outline-none focus:ring-2 ring-offset-2 ring-offset-abyss focus:ring-biolume"
+                  class="w-10 h-10 rounded-full overflow-hidden border-2 border-border hover:border-primary transition-colors focus-visible:(outline-none ring-2 ring-offset-2 ring-offset-surface ring-primary)"
                 >
-                  <Image src={p.active_avatar_id ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/images${p.inventory.find(i => i.item_id === p.active_avatar_id)?.game_items?.asset_url}` : '/game/base_avatar.svg'} height={40} width={40} alt="Avatar" />
+                  <Image src={activeAvatarUrl()} height={40} width={40} alt="Avatar" />
                 </button>
                 <Presence>
                   <Show when={isAvatarDropdownOpen()}>
@@ -105,34 +90,59 @@ const Topbar: Component = () => {
                   </Show>
                 </Presence>
               </div>
-              <div class="hidden lg:flex items-center gap-4">
-                <InlineEdit value={p.username || ""} onSave={handleSaveUsername} label="Entità:" />
-                <div class="w-px h-6 bg-starlight/20"></div>
-                <InlineEdit value={activeBiome()?.bioma_name || ""} onSave={handleSaveBiomeName} label="Bioma:" />
+              <div class="hidden md:block text-text-main font-sans font-semibold">
+                <InlineEdit value={p.username || ""} onSave={handleSaveUsername} label="ID:" />
               </div>
             </div>
 
-            {/* --- SEZIONE CENTRALE: STATISTICHE BIOMA --- */}
-            <div class="hidden md:flex items-center justify-center gap-4 text-ghost w-1/3">
-              <div class="flex items-center gap-1.5" title="Vitalità"><TbHeart class="text-red-400" /><span class="font-mono text-sm">{activeBiome()?.vitality.toFixed(1)}</span></div>
-              <div class="flex items-center gap-1.5" title="Fertilità"><TbPlant2 class="text-green-400" /><span class="font-mono text-sm">{activeBiome()?.fertility.toFixed(1)}</span></div>
-              <div class="flex items-center gap-1.5" title="Resistenza"><TbShield class="text-blue-400" /><span class="font-mono text-sm">{activeBiome()?.resistance.toFixed(1)}</span></div>
-              <div class="flex items-center gap-1.5" title="Adattabilità"><TbBrain class="text-purple-400" /><span class="font-mono text-sm">{activeBiome()?.adaptability.toFixed(1)}</span></div>
-              |
-              <div class="flex items-center gap-1.5 text-ghost" title="Energia">
-                <IoFlashOutline class="text-yellow-400" />
-                <span class="font-mono text-sm">{p.energy}</span>
+            {/* === SEZIONE DESTRA: Azioni e Stato === */}
+            <div class="flex items-center gap-2 sm:gap-4">
+              
+              {/* --- NUOVO BLOCCO STATISTICHE --- */}
+              <div class="flex items-center gap-2 text-text-main bg-surface-hover/50 rounded-lg px-3 py-1.5">
+                {/* Focus */}
+                <div class="flex items-center gap-1.5" title="Focus">
+                  <IoFlashOutline class="text-yellow-400" />
+                  <span class="font-mono text-sm font-bold">{p.focus}</span>
+                </div>
+                {/* Separatore */}
+                <div class="w-[1px] h-4 bg-border/50 mx-1"></div>
+                {/* Resilience */}
+                <div class="flex items-center gap-1.5" title="Resilience">
+                  <IoShieldOutline class="text-sky-400" />
+                  <span class="font-mono text-sm font-bold">{p.resilience}</span>
+                </div>
+                {/* Acumen */}
+                <div class="flex items-center gap-1.5" title="Acumen">
+                  <IoDiscOutline class="text-purple-400" />
+                  <span class="font-mono text-sm font-bold">{p.acumen}</span>
+                </div>
+                {/* Curiosity */}
+                <div class="flex items-center gap-1.5" title="Curiosity">
+                  <IoSearchOutline class="text-green-400" />
+                  <span class="font-mono text-sm font-bold">{p.curiosity}</span>
+                </div>
+                {/* Concentration */}
+                <div class="flex items-center gap-1.5" title="Concentration">
+                  <IoEyeOutline class="text-red-400" />
+                  <span class="font-mono text-sm font-bold">{p.concentration}</span>
+                </div>
               </div>
-            </div>
 
-            {/* --- SEZIONE DESTRA: AZIONI E ENERGIA --- */}
-            <div class="flex items-center justify-end gap-4 w-1/3">
-              <button 
-                onClick={() => gameStoreActions.signOut()}
-                class="text-ghost/70 hover:text-red-400 transition-colors"
-                title="Logout"
+              {/* Theme Switcher */}
+              <button
+                onClick={() => themeStoreActions.toggleTheme()}
+                class="btn-icon"
+                title="Toggle Theme"
               >
-                <IoLogOutOutline size={4} />
+                <Show when={themeStore.theme === 'dark'} fallback={<IoSunnyOutline />}>
+                  <IoMoonOutline />
+                </Show>
+              </button>
+
+              {/* Logout Button */}
+              <button onClick={() => gameStoreActions.signOut()} class="btn-icon !text-error/80 hover:!text-error" title="Logout">
+                <IoLogOutOutline />
               </button>
             </div>
           </>

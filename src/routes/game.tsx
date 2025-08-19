@@ -1,26 +1,30 @@
+// src/routes/game.tsx
+
 import { type RouteSectionProps } from "@solidjs/router";
 import { onMount, Show } from "solid-js";
 import Topbar from "~/components/game/layout/Topbar";
 import { gameStore, gameStoreActions } from "~/lib/gameStore";
 import { Toast } from "~/components/ui/Toast";
-import Loader from "~/components/ui/Loader"; // Assicurati che il percorso sia corretto
+import Loader from "~/components/ui/Loader";
 
 export default function GameLayout(props: RouteSectionProps) {
-  // All'avvio, lancia il caricamento dei dati. Corretto e invariato.
   onMount(() => {
-    gameStoreActions.loadInitialData()
+    gameStoreActions.loadInitialData();
   });
 
   return (
-    <div class="h-screen w-screen bg-abyss text-ghost flex flex-col overflow-hidden">
+    // =================================================================
+    // >>> LA MODIFICA È QUI <<<
+    // Aggiungiamo 'transition-colors' e 'duration-500' per animare
+    // il cambio di colore dello sfondo (bg-page) e del testo (text-text-main).
+    // =================================================================
+    <div class="h-screen w-screen bg-page text-text-main flex flex-col overflow-hidden font-sans transition-colors duration-500">
       <Toast />
-      
-      {/* 1. La Topbar è un elemento fisso del layout. */}
       <Topbar />
       
-      <main class="flex-1 overflow-y-auto">
+      <main class="flex-1 overflow-y-auto pt-16">
         <Show when={!gameStore.isLoading} fallback={<Loader inCenter={true} />}>
-          <Show when={!gameStore.error} fallback={<div class="p-8 text-center text-red-400">{gameStore.error}</div>}>
+          <Show when={!gameStore.error} fallback={<div class="p-8 text-center text-error">{gameStore.error}</div>}>
             {props.children}
           </Show>
         </Show>

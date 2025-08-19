@@ -11,70 +11,97 @@ import {
 } from 'unocss'
 
 export default defineConfig({
-  shortcuts: [
-    {
-      'grid-overlay': `
-        [background-image:linear-gradient(to_right,rgba(123,141,219,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(123,141,219,0.05)_1px,transparent_1px)]
-        [background-size:10px_10px]
-      `,
-      // --- Rarity Style Shortcuts ---
-      // Common
-      'rarity-border-common': 'border-green-400/30',
-      'rarity-text-common':   'text-green-400',
-      'rarity-bg-common':     'bg-green-900/20',
-      // Rare
-      'rarity-border-rare': 'border-blue-400/30',
-      'rarity-text-rare':   'text-blue-400',
-      'rarity-bg-rare':     'bg-blue-900/20',
-      // Epic
-      'rarity-border-epic': 'border-purple-400/30',
-      'rarity-text-epic':   'text-purple-400',
-      'rarity-bg-epic':     'bg-purple-900/20',
-      // Seasonal (using red as you suggested)
-      'rarity-border-seasonal': 'border-red-400/30',
-      'rarity-text-seasonal':   'text-red-400',
-      'rarity-bg-seasonal':     'bg-red-900/20',
-    }
-  ],
+  // Scorciatoie riutilizzabili per mantenere il codice JSX pulito
+  shortcuts: {
+    'btn-icon': 'flex items-center justify-center h-10 w-10 rounded-lg text-text-main/80 bg-transparent hover:bg-surface-hover transition-colors focus-visible:(outline-none ring-2 ring-primary)',
+  },
   theme: {
     colors: {
-      'abyss': '#080f17ff',
-      'starlight': '#7B8DDB',
-      'biolume': '#6EE7B7',
-      'ghost': '#E0E1DD',
-      'glow-start': '#6EE7B7',
-      'glow-end': '#7B8DDB',
+      // =================================================================
+      // >>> LA CORREZIONE È QUI <<<
+      // Diciamo a UnoCSS di usare la funzione rgb() con le nostre variabili.
+      // <alpha-value> è un placeholder speciale di UnoCSS che permette
+      // di usare l'opacità, es. bg-page/50. Se non specificata, è 1.
+      // =================================================================
+      'page': 'rgb(var(--color-bg-page) / <alpha-value>)',
+      'surface': 'rgb(var(--color-bg-surface) / <alpha-value>)',
+      'surface-hover': 'rgb(var(--color-bg-surface-hover) / <alpha-value>)',
+      
+      'primary': 'rgb(var(--color-primary) / <alpha-value>)',
+      'primary-hover': 'rgb(var(--color-primary-hover) / <alpha-value>)',
+
+      'text-main': 'rgb(var(--color-text-main) / <alpha-value>)',
+      'text-muted': 'rgb(var(--color-text-muted) / <alpha-value>)',
+
+      'border': 'rgb(var(--color-border) / <alpha-value>)',
+      
+      'success': 'rgb(var(--color-success) / <alpha-value>)',
+      'error': 'rgb(var(--color-error) / <alpha-value>)',
     },
-    extend: {
-      keyframes: {
-        'gradient-text-flow': {
-          '0%, 100%': { 'background-position': '0% 50%' },
-          '50%': { 'background-position': '100% 50%' },
-        },
-        'pulse-fire': {
-          'from': { filter: 'drop-shadow(0 0 8px rgba(255, 87, 34, 0.7)) drop-shadow(0 0 20px rgba(220, 38, 38, 0.5))' },
-          'to': { filter: 'drop-shadow(0 0 12px rgba(255, 87, 34, 1)) drop-shadow(0 0 30px rgba(220, 38, 38, 0.7))' }
-        }
-      },
-      animation: {
-        'gradient-text': 'gradient-text-flow 4s ease infinite',
-        'fade-in': 'fade-in 0.7s ease-in-out forwards',
-      }
-    }
   },
   presets: [
-    presetUno(),
+    presetUno({
+      // Abilita il supporto per il selettore .dark per il theming
+      dark: 'class',
+    }),
     presetAttributify(),
-    presetIcons(),
+    presetIcons({
+      scale: 1.2,
+      warn: true,
+    }),
     presetTypography(),
     presetWebFonts({
+      provider: 'google', // default
       fonts: {
-        sans: 'Inter',
+        // Font principale, pulito e moderno
+        sans: 'Inter:400,700',
+        // Font per elementi numerici o da "codice", per un look tech
+        mono: 'Source Code Pro:400,700',
       },
     }),
   ],
   transformers: [
     transformerDirectives(),
     transformerVariantGroup(),
+  ],
+  // Regole CSS pure per definire le nostre variabili di colore per i temi
+  preflights: [
+    {
+      getCSS: ({ theme }) => `
+        :root {
+          --color-bg-page: 249 249 249; /* Grigio chiarissimo */
+          --color-bg-surface: 255 255 255;
+          --color-bg-surface-hover: 240 240 240;
+          
+          --color-primary: 38 132 255; /* Blu vibrante */
+          --color-primary-hover: 80 155 255;
+
+          --color-text-main: 20 20 20;
+          --color-text-muted: 100 100 100;
+          
+          --color-border: 220 220 220;
+
+          --color-success: 39 174 96;
+          --color-error: 192 57 43;
+        }
+
+        .dark {
+          --color-bg-page: 18 18 18; /* Grigio quasi nero */
+          --color-bg-surface: 28 28 28;
+          --color-bg-surface-hover: 40 40 40;
+
+          --color-primary: 38 132 255; /* Il blu funziona bene su entrambi */
+          --color-primary-hover: 80 155 255;
+
+          --color-text-main: 235 235 235;
+          --color-text-muted: 160 160 160;
+
+          --color-border: 50 50 50;
+          
+          --color-success: 46 204 113;
+          --color-error: 231 76 60;
+        }
+      `,
+    },
   ],
 })

@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "~/lib/supabase.server";
 
 export async function GET(event: APIEvent) {
   const code = new URL(event.request.url).searchParams.get("code");
-  const next = "/game/bioma"; // Dove reindirizzare l'utente dopo il login
+  const next = "/game"; // Dove reindirizzare l'utente dopo il login
 
   if (code) {
     const supabase = createSupabaseServerClient(event);
