@@ -15,6 +15,12 @@ export default defineConfig({
   shortcuts: {
     'btn-icon': 'flex items-center justify-center h-10 w-10 rounded-lg text-text-main/80 bg-transparent hover:bg-surface-hover transition-colors focus-visible:(outline-none ring-2 ring-primary)',
   },
+  rules: [
+    // ci permette di scrivere es. perspective-800px
+    [/^perspective-([\d.]+)px$/, ([, d]) => ({ perspective: `${d}px` })], 
+    // ci permette di scrivere es. perspective-origin-center-top
+    [/^perspective-origin-(.+)$/, ([, s]) => ({ 'perspective-origin': s.replace(/-/g, ' ') })],
+  ],
   theme: {
     colors: {
       // =================================================================

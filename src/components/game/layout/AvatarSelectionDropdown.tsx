@@ -55,7 +55,6 @@ export function AvatarSelectionDropdown(props: AvatarSelectionDropdownProps) {
                   width={64} 
                   alt={item.game_items?.name || 'Avatar'}
                   class="w-full h-full object-cover"
-                  priority
                 />
               </button>
             )}

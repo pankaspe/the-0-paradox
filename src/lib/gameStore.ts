@@ -165,6 +165,16 @@ const actions = {
     clearTimeout(toastTimeout);
     setStore('toast', null);
   },
+
+    /**
+   * Aggiorna l'intero oggetto del profilo utente nello store.
+   * Utile quando il backend restituisce un profilo aggiornato dopo un'azione.
+   * @param {ProfileUser} newProfile L'oggetto completo del nuovo profilo.
+   */
+  updateProfile(newProfile: ProfileUser) {
+    setStore("profile", newProfile);
+  },
+  
 };
 
 // =================================================================
