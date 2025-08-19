@@ -11,10 +11,13 @@ import type { ProfileUser } from "~/types/game";
 // Internal Utility Functions
 // =================================================================
 
+/**
+ * Creates a Supabase server client for the current request context.
+ */
 function createClient() {
   const event = getRequestEvent();
   if (!event) {
-    throw new Error("Server context not found.");
+    throw new Error("Server context not found. Ensure this is running in a server action.");
   }
 
   return createServerClient<Database>(
@@ -34,6 +37,9 @@ function createClient() {
 // Public Server Actions
 // =================================================================
 
+/**
+ * Fetches the initial game state for the logged-in user, including their profile.
+ */
 export const getInitialGameState = async () => {
   const event = getRequestEvent();
   if (!event?.locals.user) {
@@ -57,6 +63,9 @@ export const getInitialGameState = async () => {
   return { profile: profile as ProfileUser };
 };
 
+/**
+ * Updates the user's username after validation.
+ */
 export const updateUsername = async (newUsername: string) => {
   const event = getRequestEvent();
   if (!event?.locals.user) {
@@ -87,6 +96,9 @@ export const updateUsername = async (newUsername: string) => {
   return { success: true };
 };
 
+/**
+ * Updates the user's currently equipped avatar.
+ */
 export const equipAvatar = async (avatarId: string) => {
   const event = getRequestEvent();
   if (!event?.locals.user) {
@@ -106,6 +118,9 @@ export const equipAvatar = async (avatarId: string) => {
   return { success: true };
 };
 
+/**
+ * Updates the user's preferred theme (light/dark).
+ */
 export const updateThemePreference = async (newTheme: 'light' | 'dark') => {
   const event = getRequestEvent();
   if (!event?.locals.user) {
@@ -130,6 +145,9 @@ export const updateThemePreference = async (newTheme: 'light' | 'dark') => {
   return { success: true };
 };
 
+/**
+ * Signs out the current user.
+ */
 export const signOutUser = async () => {
   const supabase = createClient();
   const { error } = await supabase.auth.signOut();
@@ -140,18 +158,9 @@ export const signOutUser = async () => {
   return { success: true };
 };
 
-
-
-
-
-
-
-
-
-
 /**
- * Recupera i dati di un singolo step del paradosso dal database.
- * @param stepId L'ID dello step da caricare.
+ * Fetches the data for a single paradox step.
+ * @param stepId - The ID of the step to retrieve.
  */
 export const getParadoxStep = async (stepId: number) => {
   const event = getRequestEvent();
@@ -167,7 +176,7 @@ export const getParadoxStep = async (stepId: number) => {
     .single();
 
   if (error) {
-    console.error("Database error fetching paradox step:", error);
+    console.error(`Database error fetching paradox step #${stepId}:`, error);
     return { success: false, error: "Could not load the paradox step." };
   }
 
@@ -175,9 +184,11 @@ export const getParadoxStep = async (stepId: number) => {
 };
 
 /**
- * Processa il tentativo di soluzione di un utente per uno step del paradosso.
- * @param stepId L'ID dello step che si sta tentando di risolvere.
- * @param submittedSolution La soluzione inviata dall'utente.
+ * Processes a user's solution attempt for a paradox step.
+ * If correct, advances the user.
+ * If incorrect, applies penalties and may trigger an Anomaly event.
+ * @param stepId - The ID of the step being solved.
+ * @param submittedSolutions - The user's proposed solution array.
  */
 export const submitParadoxSolution = async (stepId: number, submittedSolutions: string[]) => {
   const event = getRequestEvent();
@@ -188,6 +199,7 @@ export const submitParadoxSolution = async (stepId: number, submittedSolutions: 
   const supabase = createClient();
   const userId = event.locals.user.id;
 
+  // --- Data Fetching ---
   const { data: stepData, error: stepError } = await supabase
     .from('paradox_steps')
     .select('solutions, reward_acumen, reward_concentration, reward_curiosity, reward_resilience')
@@ -200,7 +212,7 @@ export const submitParadoxSolution = async (stepId: number, submittedSolutions: 
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('current_step_id, focus, acumen, concentration, curiosity, resilience, max_step_reached')
+    .select('*')
     .eq('id', userId)
     .single();
 
@@ -211,50 +223,94 @@ export const submitParadoxSolution = async (stepId: number, submittedSolutions: 
     return { success: false, error: "Sequence mismatch. Anomaly detected." };
   }
 
-  // >>> NUOVA LOGICA DI VALIDAZIONE <<<
-  const correctSolutions = stepData.solutions;
-  const isCorrect = correctSolutions.length === submittedSolutions.length && 
-                    correctSolutions.every((sol, i) => sol === submittedSolutions[i]);
+  // --- Solution Validation ---
+  const isCorrect = stepData.solutions.length === submittedSolutions.length && 
+                    stepData.solutions.every((sol, i) => sol === submittedSolutions[i]);
 
   if (isCorrect) {
-    // ... (la logica di successo è identica a prima, la ometto per brevità)
-    const newStepId = stepId + 1;
-    const newMaxStep = Math.max(profile.max_step_reached, newStepId);
-
+    // --- CORRECT SOLUTION LOGIC ---
     const { data: updatedProfile, error: updateError } = await supabase
       .from('profiles')
       .update({
-        current_step_id: newStepId, max_step_reached: newMaxStep,
-        max_step_reached_timestamp: new Date().toISOString(),
-        acumen: profile.acumen + stepData.reward_acumen,
-        concentration: profile.concentration + stepData.reward_concentration,
-        curiosity: profile.curiosity + stepData.reward_curiosity,
-        resilience: profile.resilience + stepData.reward_resilience,
+        current_step_id: stepId + 1,
+        max_step_reached: Math.max(profile.max_step_reached, stepId + 1),
+        acumen: profile.acumen + (stepData.reward_acumen || 0),
+        concentration: profile.concentration + (stepData.reward_concentration || 0),
+        curiosity: profile.curiosity + (stepData.reward_curiosity || 0),
+        resilience: profile.resilience + (stepData.reward_resilience || 0),
+        consecutive_failures: 0, // IMPORTANT: Reset the failure counter on success.
+        last_focus_update: new Date().toISOString(),
       })
-      .eq('id', userId).select().single();
+      .eq('id', userId)
+      .select()
+      .single();
 
-    if (updateError) return { success: false, error: "Error updating profile." };
+    if (updateError) {
+      console.error("Error updating profile on success:", updateError);
+      return { success: false, error: "Error updating profile." };
+    }
     return { success: true, outcome: 'correct', updatedProfile };
+
   } else {
-    // SOLUZIONE SBAGLIATA
-    const newFocus = Math.max(0, profile.focus - 10); // Penalità maggiore
+    // --- INCORRECT SOLUTION LOGIC ---
+    const newFailureCount = profile.consecutive_failures + 1;
+    let anomalyData = null;
+
+    if (newFailureCount >= 2) {
+      // Defines the stats object with explicit types.
+      const stats = {
+        resilience: profile.resilience,
+        acumen: profile.acumen,
+        curiosity: profile.curiosity,
+        concentration: profile.concentration,
+      };
+
+      // Creates a specific type for the keys of the stats object to ensure type safety.
+      type StatName = keyof typeof stats;
+
+      // Casts the result of Object.keys() to our specific type.
+      const statNames = Object.keys(stats) as StatName[];
+
+      // Reduces the array of keys to find the one with the highest value.
+      const dominantStat = statNames.reduce((a, b) => (stats[a] > stats[b] ? a : b), 'resilience');
+      
+      const { data: foundAnomaly } = await supabase
+        .from('paradox_anomalies')
+        .select('*')
+        .eq('trigger_stat', dominantStat)
+        .limit(1)
+        .single();
+      
+      if (foundAnomaly) {
+        anomalyData = foundAnomaly;
+      }
+    }
 
     const { data: updatedProfile, error: updateError } = await supabase
       .from('profiles')
-      .update({ focus: newFocus, last_focus_update: new Date().toISOString() })
-      .eq('id', userId).select().single();
-      
-    if (updateError) return { success: false, error: "Error updating profile." };
+      .update({ 
+        focus: Math.max(0, profile.focus - 10),
+        consecutive_failures: anomalyData ? 0 : newFailureCount,
+        last_focus_update: new Date().toISOString() 
+      })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error("Error updating profile on failure:", updateError);
+      return { success: false, error: "Error updating profile." };
+    }
     
-    // Forniamo un feedback dettagliato al frontend!
-    const validationDetails = correctSolutions.map((sol, i) => sol === submittedSolutions[i]);
+    const validationDetails = stepData.solutions.map((sol, i) => sol === submittedSolutions[i]);
     
     return { 
       success: false, 
       outcome: 'incorrect', 
       error: "Incorrect sequence.", 
-      details: validationDetails, // Array di booleani [true, false, ...]
-      updatedProfile 
+      details: validationDetails,
+      updatedProfile,
+      anomaly: anomalyData
     };
   }
 };
