@@ -127,9 +127,9 @@ export default function ParadoxPlayPage() {
                     {/* Sezione Narrativa con animazione parola per parola */}
                     <div class="w-full">
                         <h1 class="text-2xl md:text-3xl text-primary font-bold tracking-wider mb-6">
-                            {`ID_${paradoxStore.currentStep!.id}: ${paradoxStore.currentStep!.title}`}
+                            {`> ${paradoxStore.currentStep!.title}`}
                         </h1>
-                        <p class="text-md text-text-main/80 italic mx-auto leading-relaxed">
+                        <p class="text-md text-text-main/50 mx-auto leading-relaxed">
                           <For each={introWords()}>
                             {(word, i) => (
                               <Motion.span
@@ -184,7 +184,7 @@ export default function ParadoxPlayPage() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ duration: 0.8, delay: 0.4, easing: "ease-out" }} 
-                            class="w-full p-6 bg-surface/50 border border-border rounded-xl"
+                            class="w-full p-6 border-t border-border"
                         >
                             <h3 class="text-sm text-text-main/60 mb-4 tracking-widest">AVAILABLE FRAGMENTS</h3>
                             <div class="min-h-[100px] flex flex-wrap gap-3 items-center justify-center">
@@ -195,7 +195,7 @@ export default function ParadoxPlayPage() {
                                             animate={{ opacity: 1, scale: 1 }}
                                             transition={{ duration: 0.5, delay: i() * 0.06, easing: [0.22, 1, 0.36, 1] }}
                                             onClick={() => handleFragmentTap(fragment)}
-                                            class="px-5 py-2 border border-primary/40 rounded-full text-primary hover:bg-primary hover:text-white transition-colors duration-200"
+                                            class="px-5 py-2 border border-primary/40 text-primary hover:bg-primary hover:text-white transition-colors duration-200"
                                         >
                                         {fragment}
                                         </Motion.button>
@@ -224,7 +224,7 @@ export default function ParadoxPlayPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, easing: "ease-in" }}
-            class="p-6 bg-black border border-green-500/30 rounded-md text-green-400"
+            class="p-6 bg-surface/50 text-green-400"
           >
               <div class="flex items-center gap-2">
                 <span class="text-green-600">[root@paradox ~]#</span>

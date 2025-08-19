@@ -11,7 +11,8 @@ interface ParadoxStep {
   hint: string | null; // NUOVO (può essere nullo)
   core_text: string;
   fragments: string[];
-  solutions: string[]; 
+  solutions: string[];
+  outcome_text: string;
 }
 
 interface ParadoxStore {
@@ -70,10 +71,12 @@ const actions = {
       gameStoreActions.updateProfile(result.updatedProfile as ProfileUser);
     }
     if (result.success) {
-      gameStoreActions.showToast("Sequence accepted. Evolving...", "success");
-      setTimeout(() => this.loadCurrentStep(), 1000);
+      const outcomeMessage = store.currentStep?.outcome_text || "Sequence corretta. Analizzo...";
+      gameStoreActions.showToast(outcomeMessage, "success");
+
+      setTimeout(() => this.loadCurrentStep(), 2500);
     } else {
-      gameStoreActions.showToast(result.error || "Incorrect sequence.", "error");
+      gameStoreActions.showToast(result.error || "Sequenza errata.", "error");
       if (result.details) {
         setStore("validationDetails", result.details);
       }
