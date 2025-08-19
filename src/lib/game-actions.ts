@@ -137,24 +137,3 @@ export const signOutUser = async () => {
   }
   return { success: true };
 };
-
-export const getParadox = async (paradoxId: number) => {
-  const event = getRequestEvent();
-  if (!event?.locals.user) {
-    return null;
-  }
-
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('paradoxes')
-    .select('*')
-    .eq('id', paradoxId)
-    .single();
-
-  if (error) {
-    console.error("Error fetching paradox:", error);
-    return null;
-  }
-  
-  return data as Paradox;
-};
