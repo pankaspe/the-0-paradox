@@ -1,3 +1,4 @@
+// src/types/game.d.ts
 import type { Tables, Json } from "./supabase";
 
 export type InventoryItemWithDetails = Tables<'inventory'> & {

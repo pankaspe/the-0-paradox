@@ -1,11 +1,22 @@
 // src/lib/paradoxStore.ts
 
 import { createStore } from "solid-js/store";
-import { getParadoxStep, submitParadoxSolution } from "./game-actions";
+import { getParadoxStep, submitParadoxSolution, performInteraction } from "./game-actions";
 import { gameStore, gameStoreActions } from "./gameStore";
 import type { ProfileUser } from "~/types/game";
 
+
 // --- TYPE DEFINITIONS ---
+
+export type InteractionLog = {
+  type: 'command' | 'outcome';
+  text: string;
+};
+
+const CONSOLE_WELCOME_MESSAGE: InteractionLog[] = [
+  { type: 'outcome', text: 'Kernel v0.0.1 :: PARADOX OS' },
+  { type: 'outcome', text: 'Inizializzazione completata. Interagisci con gli elementi evidenziati nell\'ambiente per raccogliere indizi.' }
+];
 
 /**
  * Represents a single step or puzzle in the Paradox game.
@@ -21,16 +32,6 @@ export interface ParadoxStep {
   outcome_text: string;
 }
 
-/**
- * Represents an Anomaly event, triggered by consecutive failures.
- */
-export interface Anomaly {
-  id: number;
-  name: string;
-  description: string;
-  resolution_type: string;
-  config: any; // Using `any` for flexibility with different config structures.
-}
 
 /**
  * Defines the structure for the paradox-specific game state.
@@ -41,7 +42,8 @@ interface ParadoxStore {
   isSubmitting: boolean;
   error: string | null;
   validationDetails: boolean[] | null; 
-  activeAnomaly: Anomaly | null; // Holds the currently active anomaly event.
+  isDecrypted: boolean; // L'enigma è stato sbloccato?
+  interactionLog: InteractionLog[]; // Cronologia per la console
 }
 
 
@@ -52,7 +54,8 @@ const [store, setStore] = createStore<ParadoxStore>({
   isSubmitting: false,
   error: null,
   validationDetails: null,
-  activeAnomaly: null, // Initial state is no anomaly.
+  isDecrypted: false,
+  interactionLog: CONSOLE_WELCOME_MESSAGE, 
 });
 
 
@@ -75,11 +78,40 @@ const actions = {
 
     if (result.success && result.data) {
       setStore("currentStep", result.data as ParadoxStep);
+      setStore("isDecrypted", false); // Ogni nuovo step parte criptato
+      setStore("interactionLog", CONSOLE_WELCOME_MESSAGE); // Pulisci la console
+      setStore("validationDetails", null); // Pulisci la validazione precedente
+
+      if (!(result.data as any).encryption_data) {
+        setStore("isDecrypted", true);
+      }
       setStore("isLoading", false);
       setStore("error", null);
     } else {
       setStore("error", result.error || "Failed to load paradox step.");
       setStore("isLoading", false);
+    }
+  },
+
+  async handleInteraction(target: string, command: string) {
+    if (!store.currentStep) return;
+
+    // Aggiungiamo il comando dell'utente al log per un feedback immediato
+    setStore("interactionLog", prev => [...prev, { type: 'command', text: `${command} ${target}` }]);
+
+    const result = await performInteraction(store.currentStep.id, target, command);
+    
+    if (result.success) {
+      // Aggiungiamo il risultato al log
+      setStore("interactionLog", prev => [...prev, { type: 'outcome', text: result.outcome_text! }]);
+      
+      // Se l'azione ha sbloccato l'enigma, aggiorniamo lo stato!
+      if (result.reveals_key) {
+        setStore("isDecrypted", true);
+        gameStoreActions.showToast("Intuizione Raggiunta. Canale Dati Decriptato.", "success");
+      }
+    } else {
+      gameStoreActions.showToast(result.error || "Interferenza nel segnale.", "error");
     }
   },
 
@@ -111,12 +143,6 @@ const actions = {
       // On failure, show an error toast.
       gameStoreActions.showToast(result.error || "Incorrect sequence.", "error");
 
-      // If the server returned an anomaly, set it in the store to trigger the UI.
-      if (result.anomaly) {
-        setStore("activeAnomaly", result.anomaly as Anomaly);
-      }
-
-      // If the server returned validation details, update the store.
       if (result.details) {
         setStore("validationDetails", result.details);
       }
@@ -131,14 +157,6 @@ const actions = {
     setStore("validationDetails", null);
   },
 
-  /**
-   * Clears the active anomaly from the store, effectively closing its UI.
-   * Called by the AnomalySolver component upon successful resolution.
-   */
-  resolveAnomaly() {
-    setStore("activeAnomaly", null);
-    gameStoreActions.showToast("Anomaly neutralized. Connection restored.", "success");
-  }
 };
 
 export { store as paradoxStore, actions as paradoxStoreActions };

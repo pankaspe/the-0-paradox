@@ -186,7 +186,7 @@ export const getParadoxStep = async (stepId: number) => {
 /**
  * Processes a user's solution attempt for a paradox step.
  * If correct, advances the user.
- * If incorrect, applies penalties and may trigger an Anomaly event.
+ * If incorrect, applies penalties.
  * @param stepId - The ID of the step being solved.
  * @param submittedSolutions - The user's proposed solution array.
  */
@@ -212,7 +212,7 @@ export const submitParadoxSolution = async (stepId: number, submittedSolutions: 
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('*')
+    .select('*') // 'select' ora non troverà più `consecutive_failures`, il che va bene.
     .eq('id', userId)
     .single();
 
@@ -220,7 +220,7 @@ export const submitParadoxSolution = async (stepId: number, submittedSolutions: 
     return { success: false, error: "User profile not found." };
   }
   if (profile.current_step_id !== stepId) {
-    return { success: false, error: "Sequence mismatch. Anomaly detected." };
+    return { success: false, error: "Sequence mismatch. Please refresh." }; // Messaggio d'errore leggermente migliorato
   }
 
   // --- Solution Validation ---
@@ -238,7 +238,7 @@ export const submitParadoxSolution = async (stepId: number, submittedSolutions: 
         concentration: profile.concentration + (stepData.reward_concentration || 0),
         curiosity: profile.curiosity + (stepData.reward_curiosity || 0),
         resilience: profile.resilience + (stepData.reward_resilience || 0),
-        consecutive_failures: 0, // IMPORTANT: Reset the failure counter on success.
+        // RIMOSSO: `consecutive_failures: 0` non è più necessario.
         last_focus_update: new Date().toISOString(),
       })
       .eq('id', userId)
@@ -253,44 +253,13 @@ export const submitParadoxSolution = async (stepId: number, submittedSolutions: 
 
   } else {
     // --- INCORRECT SOLUTION LOGIC ---
-    const newFailureCount = profile.consecutive_failures + 1;
-    let anomalyData = null;
-
-    if (newFailureCount >= 2) {
-      // Defines the stats object with explicit types.
-      const stats = {
-        resilience: profile.resilience,
-        acumen: profile.acumen,
-        curiosity: profile.curiosity,
-        concentration: profile.concentration,
-      };
-
-      // Creates a specific type for the keys of the stats object to ensure type safety.
-      type StatName = keyof typeof stats;
-
-      // Casts the result of Object.keys() to our specific type.
-      const statNames = Object.keys(stats) as StatName[];
-
-      // Reduces the array of keys to find the one with the highest value.
-      const dominantStat = statNames.reduce((a, b) => (stats[a] > stats[b] ? a : b), 'resilience');
-      
-      const { data: foundAnomaly } = await supabase
-        .from('paradox_anomalies')
-        .select('*')
-        .eq('trigger_stat', dominantStat)
-        .limit(1)
-        .single();
-      
-      if (foundAnomaly) {
-        anomalyData = foundAnomaly;
-      }
-    }
+    // RIMOSSO: Tutta la logica legata a `newFailureCount` è stata eliminata.
 
     const { data: updatedProfile, error: updateError } = await supabase
       .from('profiles')
       .update({ 
         focus: Math.max(0, profile.focus - 10),
-        consecutive_failures: anomalyData ? 0 : newFailureCount,
+        // RIMOSSO: `consecutive_failures: newFailureCount` non esiste più.
         last_focus_update: new Date().toISOString() 
       })
       .eq('id', userId)
@@ -298,19 +267,149 @@ export const submitParadoxSolution = async (stepId: number, submittedSolutions: 
       .single();
 
     if (updateError) {
+      // Questo era il punto in cui si verificava l'errore. Ora dovrebbe funzionare.
       console.error("Error updating profile on failure:", updateError);
       return { success: false, error: "Error updating profile." };
     }
-    
+
     const validationDetails = stepData.solutions.map((sol, i) => sol === submittedSolutions[i]);
-    
+
     return { 
       success: false, 
       outcome: 'incorrect', 
       error: "Incorrect sequence.", 
       details: validationDetails,
       updatedProfile,
-      anomaly: anomalyData
     };
   }
+};
+
+
+/**
+ * Gestisce un'interazione narrativa del giocatore con un elemento dello scenario.
+ * @param stepId L'ID dello step corrente.
+ * @param target L'oggetto dell'interazione (es. "custode").
+ * @returns Il risultato testuale dell'interazione e se questa sblocca la decifrazione.
+ */
+export const performInteraction = async (stepId: number, target: string, command: string) => {
+  const event = getRequestEvent();
+  if (!event?.locals.user) {
+    return { success: false, error: "Not authenticated." };
+  }
+
+  const supabase = createClient();
+
+  // Selezioniamo solo i dati che ci servono per non sprecare risorse.
+  const { data: step, error } = await supabase
+    .from('paradox_steps')
+    .select('interactive_elements')
+    .eq('id', stepId)
+    .single();
+
+  if (error || !step || !step.interactive_elements) {
+    return { success: false, error: "Could not retrieve interaction data." };
+  }
+  
+  // TypeScript non sa cosa c'è nel JSON, quindi lo "castiamo" al tipo che ci aspettiamo.
+  const interactions = step.interactive_elements as any[]; 
+
+  // Cerchiamo l'interazione specifica che il giocatore ha richiesto.
+  const interaction = interactions.find(
+    (el) => el.target === target && el.command === command
+  );
+
+  if (!interaction) {
+    // Se per qualche motivo l'interazione non esiste, ritorniamo un messaggio generico.
+    return { success: true, outcome_text: "Nessuna risposta...", reveals_key: false };
+  }
+
+  // Ritorniamo il risultato dell'interazione al client.
+  return {
+    success: true,
+    outcome_text: interaction.outcome_text,
+    reveals_key: interaction.reveals_decryption_key || false,
+  };
+};
+
+
+/**
+ * Recupera l'elenco di tutti i paradossi (stagioni) disponibili per il giocatore.
+ */
+export const getParadoxSeasons = async () => {
+  const event = getRequestEvent();
+  if (!event?.locals.user) {
+    return { success: false, error: "Not authenticated." };
+  }
+
+  const supabase = createClient();
+  
+  // Selezioniamo tutte le stagioni attive, ordinate per ID.
+  const { data, error } = await supabase
+    .from('paradox_seasons')
+    .select('*')
+    .eq('is_active', true)
+    .order('id', { ascending: true });
+
+  if (error) {
+    console.error("Database error fetching paradox seasons:", error);
+    return { success: false, error: "Could not load paradox dossiers." };
+  }
+
+  return { success: true, data };
+};
+
+
+/**
+ * Prepara il profilo di un utente per iniziare una nuova missione (stagione).
+ * Trova il primo step della stagione e imposta il progresso dell'utente su di esso.
+ * @param seasonId L'ID della stagione da iniziare.
+ */
+export const startParadoxMission = async (seasonId: number) => {
+  const event = getRequestEvent();
+  if (!event?.locals.user) {
+    return { success: false, error: "Not authenticated." };
+  }
+
+  const supabase = createClient();
+  const userId = event.locals.user.id;
+
+  // --- 1. Trova il primo step della stagione selezionata ---
+  // Ordiniamo gli step per ID in ordine crescente e prendiamo il primo.
+  const { data: firstStep, error: stepError } = await supabase
+    .from('paradox_steps')
+    .select('id')
+    .eq('season_id', seasonId)
+    .order('id', { ascending: true })
+    .limit(1)
+    .maybeSingle(); // Usiamo maybeSingle() per non avere un errore se la stagione è vuota.
+
+  if (stepError) {
+    console.error("Error finding first step for season:", stepError);
+    return { success: false, error: "Could not find starting point for the paradox." };
+  }
+
+  if (!firstStep) {
+    return { success: false, error: "This paradox has no defined starting point (no steps found)." };
+  }
+
+  const firstStepId = firstStep.id;
+
+  // --- 2. Aggiorna il profilo dell'utente ---
+  // Impostiamo il current_step e resettiamo il max_step_reached a questo punto di partenza.
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update({ 
+      current_step_id: firstStepId,
+      max_step_reached: firstStepId // Impostiamo anche il massimo progresso a questo step
+    })
+    .eq('id', userId);
+
+  if (updateError) {
+    console.error("Error updating profile to start mission:", updateError);
+    return { success: false, error: "Failed to initialize the synchronization." };
+  }
+
+  // --- 3. Successo ---
+  // Non reindirizziamo dal server. Il client si occuperà di questo.
+  return { success: true };
 };

@@ -16,10 +16,18 @@ export default defineConfig({
     'btn-icon': 'flex items-center justify-center h-10 w-10 rounded-lg text-text-main/80 bg-transparent hover:bg-surface-hover transition-colors focus-visible:(outline-none ring-2 ring-primary)',
   },
   rules: [
-    // ci permette di scrivere es. perspective-800px
-    [/^perspective-([\d.]+)px$/, ([, d]) => ({ perspective: `${d}px` })], 
-    // ci permette di scrivere es. perspective-origin-center-top
-    [/^perspective-origin-(.+)$/, ([, s]) => ({ 'perspective-origin': s.replace(/-/g, ' ') })],
+    // Crea la classe 'preserve-3d' che applica transform-style: preserve-3d
+    ['preserve-3d', { 'transform-style': 'preserve-3d' }],
+    
+    // Crea la classe 'bg-grid-pattern' per il nostro pavimento
+    // Usa la variabile CSS --color-primary per essere consistente con il tema
+    ['bg-grid-pattern', {
+      'background-image': `
+        linear-gradient(to right, rgb(var(--color-primary) / 0.4) 1px, transparent 1px),
+        linear-gradient(to bottom, rgb(var(--color-primary) / 0.4) 1px, transparent 1px)
+      `,
+      'background-size': '40px 100px', // Dimensioni che simulano la prospettiva
+    }],
   ],
   theme: {
     colors: {
@@ -106,6 +114,11 @@ export default defineConfig({
           
           --color-success: 46 204 113;
           --color-error: 231 76 60;
+        }
+
+        @keyframes scroll-background {
+          from { background-position: 0 0; }
+          to { background-position: 0 -200px; } /* Deve essere un multiplo del background-size verticale (100px * 2) per un loop perfetto */
         }
       `,
     },
