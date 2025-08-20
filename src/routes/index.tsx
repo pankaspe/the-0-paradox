@@ -4,7 +4,7 @@ import { Motion } from "solid-motionone";
 import { themeStore, themeStoreActions } from "~/lib/themeStore";
 import { IoMoonOutline, IoSunnyOutline } from "solid-icons/io";
 
-// 1. Contenuti in Italiano, aggiornati per la nuova lore.
+// 1. Contenuti in Italiano, aggiornati per la nuova lore e la citazione.
 const content = {
   title: "PARADOX OS",
   subtitle: "Interfaccia di Stabilizzazione Temporale",
@@ -12,6 +12,12 @@ const content = {
   paragraph2: "Ogni Paradosso è un dossier: un evento storico corrotto, un'eco da stabilizzare. Il tuo intelletto è lo strumento. L'intuizione, la tua guida.",
   cta: "Accedi al Terminale",
   footer: "Protocollo Attivo. Connessione Stabile.",
+};
+
+// NUOVO: Oggetto per la citazione e la spiegazione di Gemini
+const quote = {
+  text: "Questo non è un semplice progetto, ma un esperimento. The 0 Paradox è il risultato di una simbiosi creativa tra l'intelletto humano, come architetto e supervisore e Gemini, una IA multimodale e LLM (Large Language Model) avanzato di Google, come programmatore. Un kernel interamente scritto dall'intelligenza artificiale per un'esperienza di sviluppo procedurale, infinita e coerente.",
+  author: "Andrea",
 };
 
 // 2. NUOVO: Componente per lo Sfondo Animato
@@ -57,6 +63,22 @@ const AnimatedText: Component<{ text: string, class?: string }> = (props) => {
     </h1>
   );
 };
+
+// NUOVO: Componente per la citazione animata
+const Quote: Component<{ text: string, author: string }> = (props) => {
+  return (
+    <Motion.div
+      class="max-w-2xl mt-12 text-md text-text-muted/80 leading-relaxed font-italic"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 1.5, delay: 1.5 }}
+    >
+      <p>"{props.text}"</p>
+      <p class="mt-2 text-sm text-text-muted/60">— {props.author}</p>
+    </Motion.div>
+  );
+};
+
 
 /**
  * Homepage di The 0 Paradox.
@@ -144,11 +166,14 @@ export default function HomePage() {
             </Motion.div>
           </div>
 
+          {/* NUOVO: Inserimento della citazione */}
+          <Quote text={quote.text} author={quote.author} />
+
           <Motion.div
             class="max-w-2xl mt-12 text-lg text-text-main/90 leading-relaxed"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.5, delay: 1.5 }}
+            transition={{ duration: 1.5, delay: 2.5 }}
           >
             <p>{content.paragraph1}</p>
             <p class="mt-4 text-md text-text-muted">{content.paragraph2}</p>
@@ -158,7 +183,7 @@ export default function HomePage() {
             class="mt-16"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 2, easing: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 1, delay: 3, easing: [0.16, 1, 0.3, 1] }}
           >
             <A 
               href="/login" 
@@ -174,7 +199,7 @@ export default function HomePage() {
             class="text-xs text-text-muted/50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 2, delay: 2.5 }}
+            transition={{ duration: 2, delay: 3.5 }}
           >
             {content.footer}
           </Motion.p>
