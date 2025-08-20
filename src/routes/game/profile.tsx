@@ -88,7 +88,7 @@ export default function ProfilePage() {
             >
               <div class="relative">
                 <div class="w-32 h-32 rounded-full overflow-hidden border-2 border-primary bg-surface-hover">
-                  <Image src={activeAvatarUrl()} width={128} height={128} alt="Active Avatar" />
+                  <Image src={activeAvatarUrl()} width={128} height={128} alt="Active Avatar" priority={true} />
                 </div>
                 <span class="absolute bottom-1 right-1 block w-4 h-4 bg-green-500 border-2 border-surface rounded-full" title="Status: Online" />
               </div>
