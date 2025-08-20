@@ -1,7 +1,8 @@
 import { For, Show, createMemo, createSignal, createEffect } from "solid-js";
-import { Motion } from "solid-motionone";
+import { Motion, Presence } from "solid-motionone";
 import { paradoxStore, paradoxStoreActions } from "~/lib/paradoxStore";
 import { gameStore, gameStoreActions } from "~/lib/gameStore";
+import { OutcomeModal } from "~/components/ui/OutcomeModal";
 
 // Importiamo i nostri componenti
 import { InteractiveNarrative } from "~/components/game/paradox/InteractiveNarrative";
@@ -196,6 +197,15 @@ export default function ParadoxPlayPage() {
 
         </Motion.div>
       </Show>
+
+      {/* ================================================================= */}
+      {/* >>> NUOVO: Renderizziamo il modal dell'outcome qui <<< */}
+      {/* ================================================================= */}
+      <Presence>
+        <Show when={paradoxStore.successfulOutcomeText}>
+          <OutcomeModal text={paradoxStore.successfulOutcomeText!} />
+        </Show>
+      </Presence>
     </div>
   );
 }

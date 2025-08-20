@@ -22,8 +22,8 @@ export type InteractionLog = {
 };
 
 const CONSOLE_WELCOME_MESSAGE: InteractionLog[] = [
-  { type: 'outcome', text: 'Kernel v0.0.1 :: PARADOX OS' },
-  { type: 'outcome', text: 'Inizializzazione completata. Interagisci con gli elementi evidenziati nell\'ambiente per raccogliere indizi.' }
+  { type: 'outcome', text: 'Kernel v0.0.1 :: PARADOX os' },
+  { type: 'outcome', text: 'Status 200. Interagisci con gli elementi evidenziati nell\'ambiente per raccogliere indizi.' }
 ];
 
 interface ParadoxStore {
@@ -34,6 +34,7 @@ interface ParadoxStore {
   validationDetails: boolean[] | null; 
   isDecrypted: boolean;
   interactionLog: InteractionLog[];
+   successfulOutcomeText: string | null;
 }
 
 
@@ -46,6 +47,7 @@ const [store, setStore] = createStore<ParadoxStore>({
   validationDetails: null,
   isDecrypted: false,
   interactionLog: CONSOLE_WELCOME_MESSAGE,
+  successfulOutcomeText: null,
 });
 
 
@@ -102,8 +104,8 @@ const actions = {
     }
 
     if (result.success) {
-      const outcomeMessage = store.currentStep?.outcome_text || "Sequence accepted. Evolving...";
-      gameStoreActions.showToast(outcomeMessage, "success");
+      const outcomeMessage = store.currentStep?.outcome_text || "Sequenza stabilizzata. Sincronizzazione...";
+      setStore("successfulOutcomeText", outcomeMessage);
 
       const droppedItem = result.droppedItem;
       if (droppedItem) {
@@ -118,6 +120,14 @@ const actions = {
       }
     }
     setStore("isSubmitting", false);
+  },
+
+    /**
+   * Nasconde il modal di outcome e carica il prossimo livello.
+   */
+  proceedToNextStep() {
+    setStore("successfulOutcomeText", null);
+    this.loadCurrentStep();
   },
 
   /**
