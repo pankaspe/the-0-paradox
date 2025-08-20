@@ -117,7 +117,7 @@ const Topbar: Component = () => {
             {/* Le statistiche sono state rimosse da qui */}
             <div class="flex items-center gap-2 sm:gap-4">
               <div class="flex items-center gap-2 bg-surface-hover/50 rounded-lg p-1">
-                <A href="/game/dashboard" class="btn-icon" title="Dashboard" classList={{ 'bg-primary/20 text-primary': location.pathname.includes('/dashboard') }}>
+                <A href="/game/" class="btn-icon" title="Dashboard" classList={{ 'bg-primary/20 text-primary': location.pathname.includes('/dashboard') }}>
                   <IoGridOutline />
                 </A>
                 <A href="/game/profile" class="btn-icon" title="Profilo" classList={{ 'bg-primary/20 text-primary': location.pathname.includes('/profile') }}>

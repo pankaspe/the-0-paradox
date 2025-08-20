@@ -390,3 +390,53 @@ export const startParadoxMission = async (seasonId: number) => {
 
   return { success: true };
 };
+
+
+/**
+ * Recupera le informazioni sulla missione corrente dell'utente.
+ */
+export const getCurrentMissionInfo = async () => {
+  const event = getRequestEvent();
+  if (!event?.locals.user) return null;
+
+  const supabase = createClient();
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('current_step_id')
+    .eq('id', event.locals.user.id)
+    .single();
+
+  if (!profile) return null;
+
+  // Eseguiamo una query che unisce i dati dello step con quelli della sua stagione
+  const { data: stepInfo, error } = await supabase
+    .from('paradox_steps')
+    .select(`
+      title,
+      id,
+      paradox_seasons (
+        title,
+        id
+      )
+    `)
+    .eq('id', profile.current_step_id)
+    .single();
+
+  if (error || !stepInfo) {
+    console.error("Error fetching current mission info:", error);
+    return null;
+  }
+
+  // Contiamo quanti step ci sono in totale in quella stagione per la barra di progresso
+  const { count, error: countError } = await supabase
+    .from('paradox_steps')
+    .select('*', { count: 'exact', head: true })
+    .eq('season_id', (stepInfo.paradox_seasons as any).id);
+
+  return {
+    seasonTitle: (stepInfo.paradox_seasons as any).title,
+    currentStepTitle: stepInfo.title,
+    currentStepNumber: stepInfo.id,
+    totalStepsInSeason: countError ? 0 : count,
+  };
+};
