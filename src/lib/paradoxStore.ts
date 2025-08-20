@@ -1,26 +1,10 @@
-// src/lib/paradoxStore.ts
-
 import { createStore } from "solid-js/store";
 import { getParadoxStep, submitParadoxSolution, performInteraction } from "./game-actions";
 import { gameStore, gameStoreActions } from "./gameStore";
-import type { ProfileUser } from "~/types/game";
-
+import type { ProfileUser, SubmitSolutionResult } from "~/types/game";
 
 // --- TYPE DEFINITIONS ---
 
-export type InteractionLog = {
-  type: 'command' | 'outcome';
-  text: string;
-};
-
-const CONSOLE_WELCOME_MESSAGE: InteractionLog[] = [
-  { type: 'outcome', text: 'Kernel v0.0.1 :: PARADOX OS' },
-  { type: 'outcome', text: 'Inizializzazione completata. Interagisci con gli elementi evidenziati nell\'ambiente per raccogliere indizi.' }
-];
-
-/**
- * Represents a single step or puzzle in the Paradox game.
- */
 export interface ParadoxStep {
   id: number;
   title: string;
@@ -32,18 +16,24 @@ export interface ParadoxStep {
   outcome_text: string;
 }
 
+export type InteractionLog = {
+  type: 'command' | 'outcome';
+  text: string;
+};
 
-/**
- * Defines the structure for the paradox-specific game state.
- */
+const CONSOLE_WELCOME_MESSAGE: InteractionLog[] = [
+  { type: 'outcome', text: 'Kernel v0.0.1 :: PARADOX OS' },
+  { type: 'outcome', text: 'Inizializzazione completata. Interagisci con gli elementi evidenziati nell\'ambiente per raccogliere indizi.' }
+];
+
 interface ParadoxStore {
   currentStep: ParadoxStep | null;
   isLoading: boolean;
   isSubmitting: boolean;
   error: string | null;
   validationDetails: boolean[] | null; 
-  isDecrypted: boolean; // L'enigma è stato sbloccato?
-  interactionLog: InteractionLog[]; // Cronologia per la console
+  isDecrypted: boolean;
+  interactionLog: InteractionLog[];
 }
 
 
@@ -55,7 +45,7 @@ const [store, setStore] = createStore<ParadoxStore>({
   error: null,
   validationDetails: null,
   isDecrypted: false,
-  interactionLog: CONSOLE_WELCOME_MESSAGE, 
+  interactionLog: CONSOLE_WELCOME_MESSAGE,
 });
 
 
@@ -78,10 +68,9 @@ const actions = {
 
     if (result.success && result.data) {
       setStore("currentStep", result.data as ParadoxStep);
-      setStore("isDecrypted", false); // Ogni nuovo step parte criptato
-      setStore("interactionLog", CONSOLE_WELCOME_MESSAGE); // Pulisci la console
-      setStore("validationDetails", null); // Pulisci la validazione precedente
-
+      setStore("isDecrypted", false);
+      setStore("interactionLog", CONSOLE_WELCOME_MESSAGE);
+      setStore("validationDetails", null);
       if (!(result.data as any).encryption_data) {
         setStore("isDecrypted", true);
       }
@@ -93,19 +82,57 @@ const actions = {
     }
   },
 
+  /**
+   * Submits the user's proposed solution to the server for validation.
+   */
+ async submitSolution(solutions: (string | null)[]) {
+    if (!store.currentStep || store.isSubmitting) return;
+    if (solutions.some(s => s === null)) {
+      gameStoreActions.showToast("All slots must be filled.", "error");
+      return;
+    }
+    setStore("isSubmitting", true);
+    this.resetValidation();
+
+    // Non è più necessario specificare il tipo qui, perché la funzione lo "promette"
+    const result = await submitParadoxSolution(store.currentStep.id, solutions as string[]);
+    
+    if (result.updatedProfile) {
+      gameStoreActions.updateProfile(result.updatedProfile);
+    }
+
+    if (result.success) {
+      const outcomeMessage = store.currentStep?.outcome_text || "Sequence accepted. Evolving...";
+      gameStoreActions.showToast(outcomeMessage, "success");
+
+      const droppedItem = result.droppedItem;
+      if (droppedItem) {
+        gameStoreActions.showDropModal(droppedItem);;
+      }
+
+      setTimeout(() => this.loadCurrentStep(), 2500);
+    } else {
+      gameStoreActions.showToast(result.error || "Incorrect sequence.", "error");
+      if (result.details) {
+        setStore("validationDetails", result.details);
+      }
+    }
+    setStore("isSubmitting", false);
+  },
+
+  /**
+   * Gestisce l'interazione narrativa.
+   */
   async handleInteraction(target: string, command: string) {
     if (!store.currentStep) return;
 
-    // Aggiungiamo il comando dell'utente al log per un feedback immediato
     setStore("interactionLog", prev => [...prev, { type: 'command', text: `${command} ${target}` }]);
 
     const result = await performInteraction(store.currentStep.id, target, command);
     
     if (result.success) {
-      // Aggiungiamo il risultato al log
       setStore("interactionLog", prev => [...prev, { type: 'outcome', text: result.outcome_text! }]);
       
-      // Se l'azione ha sbloccato l'enigma, aggiorniamo lo stato!
       if (result.reveals_key) {
         setStore("isDecrypted", true);
         gameStoreActions.showToast("Intuizione Raggiunta. Canale Dati Decriptato.", "success");
@@ -116,47 +143,11 @@ const actions = {
   },
 
   /**
-   * Submits the user's proposed solution to the server for validation.
-   * Handles success (advancing to the next step) and failure (showing errors and potentially triggering an Anomaly).
-   */
-  async submitSolution(solutions: (string | null)[]) {
-    if (!store.currentStep || store.isSubmitting) return;
-    if (solutions.some(s => s === null)) {
-      gameStoreActions.showToast("All slots must be filled.", "error");
-      return;
-    }
-    setStore("isSubmitting", true);
-    this.resetValidation();
-
-    const result = await submitParadoxSolution(store.currentStep.id, solutions as string[]);
-    
-    if (result.updatedProfile) {
-      gameStoreActions.updateProfile(result.updatedProfile as ProfileUser);
-    }
-
-    if (result.success) {
-      const outcomeMessage = store.currentStep?.outcome_text || "Sequence accepted. Evolving...";
-      gameStoreActions.showToast(outcomeMessage, "success");
-      // Wait for the toast to be readable before loading the next step.
-      setTimeout(() => this.loadCurrentStep(), 2500);
-    } else {
-      // On failure, show an error toast.
-      gameStoreActions.showToast(result.error || "Incorrect sequence.", "error");
-
-      if (result.details) {
-        setStore("validationDetails", result.details);
-      }
-    }
-    setStore("isSubmitting", false);
-  },
-
-  /**
-   * Clears the current validation feedback state (e.g., green/red highlighting).
+   * Clears the current validation feedback state.
    */
   resetValidation() {
     setStore("validationDetails", null);
   },
-
 };
 
 export { store as paradoxStore, actions as paradoxStoreActions };

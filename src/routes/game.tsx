@@ -4,12 +4,14 @@ import Topbar from "~/components/game/layout/Topbar";
 import { gameStore, gameStoreActions } from "~/lib/gameStore";
 import { Toast } from "~/components/ui/Toast";
 import Loader from "~/components/ui/Loader";
-import { Motion } from "solid-motionone";
+import { Motion, Presence } from "solid-motionone";
+import { ItemDropModal } from "~/components/ui/ItemDropModal";
 
-// 1. Definiamo il componente dello sfondo direttamente qui per semplicità
+/**
+ * Componente per lo sfondo animato.
+ */
 const AnimatedBackground: Component = () => {
   return (
-    // Questo contenitore ha il colore di base (bg-page) E gli elementi animati
     <div class="absolute inset-0 -z-10 overflow-hidden bg-page transition-colors duration-500">
       <div class="animated-grid" />
       <Motion.div
@@ -26,6 +28,9 @@ const AnimatedBackground: Component = () => {
   );
 };
 
+/**
+ * Layout principale per tutte le schermate di gioco.
+ */
 export default function GameLayout(props: RouteSectionProps) {
   onMount(() => {
     gameStoreActions.loadInitialData();
@@ -45,13 +50,9 @@ export default function GameLayout(props: RouteSectionProps) {
         @keyframes pan { 0% { background-position: 0 0; } 100% { background-position: 40px 40px; } }
       `}</style>
 
-      {/* === LA MODIFICA CHIAVE È QUI === */}
-      {/* Rimuoviamo la classe 'bg-page' da questo div. Ora è TRASPARENTE */}
       <div class="h-screen w-screen text-text-main flex flex-col overflow-hidden font-mono relative transition-colors duration-500">
         
-        {/* Lo sfondo ora è l'unico elemento a fornire un colore di base */}
         <AnimatedBackground />
-
         <Toast />
         <Topbar />
         
@@ -62,6 +63,18 @@ export default function GameLayout(props: RouteSectionProps) {
             </Show>
           </Show>
         </main>
+
+        {/* Renderizza il modal se c'è un oggetto nello store */}
+        <Presence>
+          <Show when={gameStore.droppedItemModal}>
+            {/* 
+              Usiamo '!' (Non-null assertion operator) perché il componente
+              'Show' garantisce che gameStore.droppedItemModal non sia null qui.
+              Questo dice a TypeScript: "Fidati, so che questo valore esiste."
+            */}
+            <ItemDropModal item={gameStore.droppedItemModal!} />
+          </Show>
+        </Presence>
       </div>
     </>
   );

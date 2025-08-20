@@ -1,11 +1,9 @@
-// src/lib/game-actions.ts
-
 "use server";
 
 import { getRequestEvent } from "solid-js/web";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "~/types/supabase";
-import type { ProfileUser } from "~/types/game";
+import type { ProfileUser, SubmitSolutionResult  } from "~/types/game";
 
 // =================================================================
 // Internal Utility Functions
@@ -160,7 +158,6 @@ export const signOutUser = async () => {
 
 /**
  * Fetches the data for a single paradox step.
- * @param stepId - The ID of the step to retrieve.
  */
 export const getParadoxStep = async (stepId: number) => {
   const event = getRequestEvent();
@@ -183,14 +180,16 @@ export const getParadoxStep = async (stepId: number) => {
   return { success: true, data };
 };
 
+
+
 /**
  * Processes a user's solution attempt for a paradox step.
- * If correct, advances the user.
- * If incorrect, applies penalties.
- * @param stepId - The ID of the step being solved.
- * @param submittedSolutions - The user's proposed solution array.
+ * If correct, advances the user and may drop an item.
  */
-export const submitParadoxSolution = async (stepId: number, submittedSolutions: string[]) => {
+export const submitParadoxSolution = async (
+  stepId: number, 
+  submittedSolutions: string[]
+): Promise<SubmitSolutionResult> => { // Tipo di ritorno specificato
   const event = getRequestEvent();
   if (!event?.locals.user) {
     return { success: false, error: "Not authenticated." };
@@ -199,36 +198,52 @@ export const submitParadoxSolution = async (stepId: number, submittedSolutions: 
   const supabase = createClient();
   const userId = event.locals.user.id;
 
-  // --- Data Fetching ---
   const { data: stepData, error: stepError } = await supabase
     .from('paradox_steps')
-    .select('solutions, reward_acumen, reward_concentration, reward_curiosity, reward_resilience')
+    .select('solutions, reward_acumen, reward_concentration, reward_curiosity, reward_resilience, season_id')
     .eq('id', stepId)
     .single();
 
-  if (stepError || !stepData) {
-    return { success: false, error: "Paradox step not found." };
+  if (stepError || !stepData || !stepData.season_id) {
+    return { success: false, error: "Paradox step not found or not configured." };
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('*') // 'select' ora non troverà più `consecutive_failures`, il che va bene.
-    .eq('id', userId)
-    .single();
+  const { data: profile, error: profileError } = await supabase.from('profiles').select('*').eq('id', userId).single();
+  if (profileError || !profile) { return { success: false, error: "User profile not found." }; }
+  if (profile.current_step_id !== stepId) { return { success: false, error: "Sequence mismatch. Please refresh." }; }
 
-  if (profileError || !profile) {
-    return { success: false, error: "User profile not found." };
-  }
-  if (profile.current_step_id !== stepId) {
-    return { success: false, error: "Sequence mismatch. Please refresh." }; // Messaggio d'errore leggermente migliorato
-  }
-
-  // --- Solution Validation ---
   const isCorrect = stepData.solutions.length === submittedSolutions.length && 
                     stepData.solutions.every((sol, i) => sol === submittedSolutions[i]);
 
   if (isCorrect) {
-    // --- CORRECT SOLUTION LOGIC ---
+    let droppedItem = null;
+    const dropChance = 1; // '0.25 MODIFICO IL DROPRATE @ 1
+    if (Math.random() < dropChance) {
+      const rarityRoll = Math.random();
+      let determinedRarity = 'COMMON';
+      if (rarityRoll < 0.05) determinedRarity = 'EPIC';
+      else if (rarityRoll < 0.25) determinedRarity = 'RARE';
+
+      const { data: potentialDrops } = await supabase
+        .from('game_items')
+        .select('id, name, rarity, asset_url')
+        .eq('season_id', stepData.season_id)
+        .eq('rarity', determinedRarity)
+        .eq('item_type', 'AVATAR');
+
+      if (potentialDrops && potentialDrops.length > 0) {
+        const { data: userInventory } = await supabase.from('inventory').select('item_id').eq('owner_id', userId);
+        const ownedItemIds = userInventory ? userInventory.map(i => i.item_id) : [];
+        const newPossibleDrops = potentialDrops.filter(drop => !ownedItemIds.includes(drop.id));
+
+        if (newPossibleDrops.length > 0) {
+          const chosenDrop = newPossibleDrops[Math.floor(Math.random() * newPossibleDrops.length)];
+          const { error: insertError } = await supabase.from('inventory').insert({ owner_id: userId, item_id: chosenDrop.id });
+          if (!insertError) droppedItem = chosenDrop;
+        }
+      }
+    }
+
     const { data: updatedProfile, error: updateError } = await supabase
       .from('profiles')
       .update({
@@ -238,58 +253,43 @@ export const submitParadoxSolution = async (stepId: number, submittedSolutions: 
         concentration: profile.concentration + (stepData.reward_concentration || 0),
         curiosity: profile.curiosity + (stepData.reward_curiosity || 0),
         resilience: profile.resilience + (stepData.reward_resilience || 0),
-        // RIMOSSO: `consecutive_failures: 0` non è più necessario.
         last_focus_update: new Date().toISOString(),
       })
       .eq('id', userId)
-      .select()
+      .select('*, inventory(*, game_items(*))') // Chiediamo il profilo completo
       .single();
 
-    if (updateError) {
-      console.error("Error updating profile on success:", updateError);
+    if (updateError || !updatedProfile) {
       return { success: false, error: "Error updating profile." };
     }
-    return { success: true, outcome: 'correct', updatedProfile };
-
+    
+    return { success: true, outcome: 'correct', updatedProfile: updatedProfile as ProfileUser, droppedItem };
   } else {
-    // --- INCORRECT SOLUTION LOGIC ---
-    // RIMOSSO: Tutta la logica legata a `newFailureCount` è stata eliminata.
-
     const { data: updatedProfile, error: updateError } = await supabase
       .from('profiles')
-      .update({ 
-        focus: Math.max(0, profile.focus - 10),
-        // RIMOSSO: `consecutive_failures: newFailureCount` non esiste più.
-        last_focus_update: new Date().toISOString() 
-      })
+      .update({ focus: Math.max(0, profile.focus - 10), last_focus_update: new Date().toISOString() })
       .eq('id', userId)
-      .select()
+      .select('*, inventory(*, game_items(*))') // Chiediamo il profilo completo
       .single();
 
-    if (updateError) {
-      // Questo era il punto in cui si verificava l'errore. Ora dovrebbe funzionare.
-      console.error("Error updating profile on failure:", updateError);
+    if (updateError || !updatedProfile) {
       return { success: false, error: "Error updating profile." };
     }
-
+    
     const validationDetails = stepData.solutions.map((sol, i) => sol === submittedSolutions[i]);
-
+    
     return { 
       success: false, 
       outcome: 'incorrect', 
       error: "Incorrect sequence.", 
       details: validationDetails,
-      updatedProfile,
+      updatedProfile: updatedProfile as ProfileUser,
     };
   }
 };
 
-
 /**
  * Gestisce un'interazione narrativa del giocatore con un elemento dello scenario.
- * @param stepId L'ID dello step corrente.
- * @param target L'oggetto dell'interazione (es. "custode").
- * @returns Il risultato testuale dell'interazione e se questa sblocca la decifrazione.
  */
 export const performInteraction = async (stepId: number, target: string, command: string) => {
   const event = getRequestEvent();
@@ -298,8 +298,6 @@ export const performInteraction = async (stepId: number, target: string, command
   }
 
   const supabase = createClient();
-
-  // Selezioniamo solo i dati che ci servono per non sprecare risorse.
   const { data: step, error } = await supabase
     .from('paradox_steps')
     .select('interactive_elements')
@@ -310,20 +308,13 @@ export const performInteraction = async (stepId: number, target: string, command
     return { success: false, error: "Could not retrieve interaction data." };
   }
   
-  // TypeScript non sa cosa c'è nel JSON, quindi lo "castiamo" al tipo che ci aspettiamo.
-  const interactions = step.interactive_elements as any[]; 
-
-  // Cerchiamo l'interazione specifica che il giocatore ha richiesto.
-  const interaction = interactions.find(
-    (el) => el.target === target && el.command === command
-  );
+  const interactions = step.interactive_elements as any[];
+  const interaction = interactions.find((el) => el.target === target && el.command === command);
 
   if (!interaction) {
-    // Se per qualche motivo l'interazione non esiste, ritorniamo un messaggio generico.
     return { success: true, outcome_text: "Nessuna risposta...", reveals_key: false };
   }
 
-  // Ritorniamo il risultato dell'interazione al client.
   return {
     success: true,
     outcome_text: interaction.outcome_text,
@@ -331,9 +322,8 @@ export const performInteraction = async (stepId: number, target: string, command
   };
 };
 
-
 /**
- * Recupera l'elenco di tutti i paradossi (stagioni) disponibili per il giocatore.
+ * Recupera l'elenco di tutti i paradossi (stagioni) disponibili.
  */
 export const getParadoxSeasons = async () => {
   const event = getRequestEvent();
@@ -342,8 +332,6 @@ export const getParadoxSeasons = async () => {
   }
 
   const supabase = createClient();
-  
-  // Selezioniamo tutte le stagioni attive, ordinate per ID.
   const { data, error } = await supabase
     .from('paradox_seasons')
     .select('*')
@@ -358,11 +346,8 @@ export const getParadoxSeasons = async () => {
   return { success: true, data };
 };
 
-
 /**
  * Prepara il profilo di un utente per iniziare una nuova missione (stagione).
- * Trova il primo step della stagione e imposta il progresso dell'utente su di esso.
- * @param seasonId L'ID della stagione da iniziare.
  */
 export const startParadoxMission = async (seasonId: number) => {
   const event = getRequestEvent();
@@ -373,15 +358,13 @@ export const startParadoxMission = async (seasonId: number) => {
   const supabase = createClient();
   const userId = event.locals.user.id;
 
-  // --- 1. Trova il primo step della stagione selezionata ---
-  // Ordiniamo gli step per ID in ordine crescente e prendiamo il primo.
   const { data: firstStep, error: stepError } = await supabase
     .from('paradox_steps')
     .select('id')
     .eq('season_id', seasonId)
     .order('id', { ascending: true })
     .limit(1)
-    .maybeSingle(); // Usiamo maybeSingle() per non avere un errore se la stagione è vuota.
+    .maybeSingle();
 
   if (stepError) {
     console.error("Error finding first step for season:", stepError);
@@ -389,18 +372,14 @@ export const startParadoxMission = async (seasonId: number) => {
   }
 
   if (!firstStep) {
-    return { success: false, error: "This paradox has no defined starting point (no steps found)." };
+    return { success: false, error: "This paradox has no defined starting point." };
   }
 
-  const firstStepId = firstStep.id;
-
-  // --- 2. Aggiorna il profilo dell'utente ---
-  // Impostiamo il current_step e resettiamo il max_step_reached a questo punto di partenza.
   const { error: updateError } = await supabase
     .from('profiles')
     .update({ 
-      current_step_id: firstStepId,
-      max_step_reached: firstStepId // Impostiamo anche il massimo progresso a questo step
+      current_step_id: firstStep.id,
+      max_step_reached: firstStep.id
     })
     .eq('id', userId);
 
@@ -409,7 +388,5 @@ export const startParadoxMission = async (seasonId: number) => {
     return { success: false, error: "Failed to initialize the synchronization." };
   }
 
-  // --- 3. Successo ---
-  // Non reindirizziamo dal server. Il client si occuperà di questo.
   return { success: true };
 };

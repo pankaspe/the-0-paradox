@@ -1,7 +1,7 @@
 // src/lib/gameStore.ts
 
 import { createStore, produce } from "solid-js/store";
-import type { ProfileUser } from "~/types/game";
+import type { ProfileUser, DroppedItem  } from "~/types/game";
 import {
   getInitialGameState,
   signOutUser,
@@ -25,6 +25,7 @@ interface GameStore {
   error: string | null;
   toast: { message: string; type: 'success' | 'error' | 'info'; id: number } | null;
   isSubmitting: boolean;
+  droppedItemModal: DroppedItem | null;
 }
 
 /**
@@ -36,6 +37,7 @@ const [store, setStore] = createStore<GameStore>({
   error: null,
   toast: null,
   isSubmitting: false,
+  droppedItemModal: null,
 });
 
 /**
@@ -141,6 +143,25 @@ const actions = {
       this.showToast(`Error during logout: ${result.error}`, 'error');
     }
   },
+
+  // =================================================================
+  // >>> NUOVE ACTIONS PER IL MODAL <<<
+  // =================================================================
+  /**
+   * Mostra il modal del drop con l'oggetto specificato.
+   * @param {DroppedItem} item L'oggetto da mostrare.
+   */
+  showDropModal(item: DroppedItem) {
+    setStore("droppedItemModal", item);
+  },
+
+  /**
+   * Nasconde il modal del drop.
+   */
+  hideDropModal() {
+    setStore("droppedItemModal", null);
+  },
+
 
   // --- UI and Toast Management ---
 
