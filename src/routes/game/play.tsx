@@ -89,13 +89,13 @@ export default function ParadoxPlayPage() {
 
   // --- RENDER ---
   return (
-    <div class="w-full max-w-5xl mx-auto p-4 md:p-8 font-mono flex flex-col h-full">
+    <div class="w-full max-w-5xl mx-auto p-4 md:p-8 flex flex-col h-full">
       
       <Show when={!paradoxStore.isLoading && paradoxStore.currentStep} fallback={ <div class="text-text-main/80 text-md text-center p-10">LOADING PARADOX...</div> }>
         <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.0 }} class="flex-grow flex flex-col gap-8">
             
           {/* SEZIONE 1: Narrazione e Titolo */}
-          <div>
+          <div class="bg-surface/50 backdrop-blur-sm border border-border/30 p-6 rounded-lg">
             <h1 class="text-2xl md:text-3xl text-primary font-bold tracking-wider mb-6">{`> ${paradoxStore.currentStep!.title}`}</h1>
             <InteractiveNarrative 
               text={paradoxStore.currentStep!.intro_text}
@@ -104,7 +104,7 @@ export default function ParadoxPlayPage() {
           </div>
 
           {/* SEZIONE 2: Enigma Centrale */}
-          <div class="w-full text-center p-6 min-h-[100px] border-y border-border my-4">
+          <div class="w-full text-center p-6 min-h-[100px] border-y border-border/50 bg-surface/20">
             <Show when={paradoxStore.isDecrypted} fallback={
               <p class="text-xl md:text-2xl text-text-main/50 tracking-widest blur-sm select-none">{encryptedText()}</p>
             }>
@@ -126,7 +126,9 @@ export default function ParadoxPlayPage() {
           </div>
           
           {/* SEZIONE 3: Tabs e Interazione */}
-          <div class="flex-grow bg-surface/50 border border-border/50 rounded-md p-1 mt-8">
+          {/* === MODIFICA CHIAVE QUI === */}
+          {/* Rimosso bg-surface/50 e aggiunto backdrop-blur-sm per un effetto vetro */}
+          <div class="flex-grow border border-border/30 rounded-lg p-1 backdrop-blur-sm bg-surface/50">
             <div class="flex items-center border-b border-border/50">
               <button 
                 onClick={() => setActiveTab('console')} 
@@ -150,9 +152,7 @@ export default function ParadoxPlayPage() {
             </div>
 
             <div class="p-2 md:p-4">
-              {/* --- MODIFICA CHIAVE QUI --- */}
-              {/* Sostituiamo <Show> con una <div> e la direttiva classList */}
-              <div classList={{ hidden: activeTab() !== 'console' }} class="mt-10">
+              <div classList={{ hidden: activeTab() !== 'console' }}>
                 <InvestigationConsole log={paradoxStore.interactionLog} />
               </div>
 
