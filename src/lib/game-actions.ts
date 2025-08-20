@@ -217,7 +217,7 @@ export const submitParadoxSolution = async (
 
   if (isCorrect) {
     let droppedItem = null;
-    const dropChance = 1; // '0.25 MODIFICO IL DROPRATE @ 1
+    const dropChance = 0.25; // '0.25 MODIFICO IL DROPRATE @ 1
     if (Math.random() < dropChance) {
       const rarityRoll = Math.random();
       let determinedRarity = 'COMMON';
