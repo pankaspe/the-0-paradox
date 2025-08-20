@@ -1,18 +1,22 @@
 import { type Component, Show, createSignal, onMount, onCleanup, createMemo } from "solid-js";
 import { isServer } from "solid-js/web";
+import { A, useLocation } from "@solidjs/router";
 import { gameStore, gameStoreActions } from "~/lib/gameStore";
 import { themeStore, themeStoreActions } from "~/lib/themeStore";
 import { Image } from "@unpic/solid";
-// --- Importiamo le nuove icone ---
+// --- Icone ---
 import { 
   IoFlashOutline, 
   IoLogOutOutline, 
   IoMoonOutline, 
   IoSunnyOutline,
-  IoShieldOutline,     // Per Resilience
-  IoDiscOutline,      // Per Acumen
-  IoSearchOutline,     // Per Curiosity
-  IoEyeOutline         // Per Concentration
+  IoShieldOutline,
+  IoDiscOutline,
+  IoSearchOutline,
+  IoEyeOutline,
+  IoGridOutline,
+  IoTerminalOutline,
+  IoGitNetworkOutline
 } from "solid-icons/io";
 import { Presence } from "solid-motionone";
 import { AvatarSelectionDropdown } from "./AvatarSelectionDropdown";
@@ -23,6 +27,8 @@ const Topbar: Component = () => {
   const profile = () => gameStore.profile;
   const [isAvatarDropdownOpen, setIsAvatarDropdownOpen] = createSignal(false);
   let avatarMenuRef: HTMLDivElement | undefined;
+  
+  const location = useLocation();
 
   if (!isServer) {
     const handleClickOutside = (event: MouseEvent) => {
@@ -64,11 +70,12 @@ const Topbar: Component = () => {
   };
 
   return (
-    <header class="fixed top-0 left-0 right-0 h-16 bg-surface/80 backdrop-blur-sm border-b border-border flex items-center justify-between px-4 sm:px-6 z-50">
+    // === MODIFICA CHIAVE 1: Aggiunto 'relative' per il posizionamento assoluto del centro ===
+    <header class="relative fixed top-0 left-0 right-0 h-16 bg-surface/80 backdrop-blur-sm border-b border-border flex items-center justify-between px-4 sm:px-6 z-50">
       <Show when={profile()} keyed>
         {p => (
           <>
-            {/* === SEZIONE SINISTRA: Identità Utente === */}
+            {/* === SEZIONE SINISTRA: Identità Utente (invariata) === */}
             <div class="flex items-center gap-3">
               <div class="relative" ref={avatarMenuRef}>
                 <button
@@ -95,55 +102,40 @@ const Topbar: Component = () => {
               </div>
             </div>
 
-            {/* === SEZIONE DESTRA: Azioni e Stato === */}
+            {/* === NUOVO: SEZIONE CENTRALE (Statistiche) === */}
+            {/* Posizionata in modo assoluto per essere sempre perfettamente al centro */}
+            <div class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 hidden lg:flex items-center gap-2 text-text-main bg-surface-hover/50 rounded-lg px-3 py-1.5">
+              <div class="flex items-center gap-1.5" title="Focus"><IoFlashOutline class="text-yellow-400" /> <span class="font-mono text-sm font-bold">{p.focus}</span></div>
+              <div class="w-[1px] h-4 bg-border/50 mx-1"></div>
+              <div class="flex items-center gap-1.5" title="Resilience"><IoShieldOutline class="text-sky-400" /> <span class="font-mono text-sm font-bold">{p.resilience}</span></div>
+              <div class="flex items-center gap-1.5" title="Acumen"><IoDiscOutline class="text-purple-400" /> <span class="font-mono text-sm font-bold">{p.acumen}</span></div>
+              <div class="flex items-center gap-1.5" title="Curiosity"><IoSearchOutline class="text-green-400" /> <span class="font-mono text-sm font-bold">{p.curiosity}</span></div>
+              <div class="flex items-center gap-1.5" title="Concentration"><IoEyeOutline class="text-red-400" /> <span class="font-mono text-sm font-bold">{p.concentration}</span></div>
+            </div>
+
+            {/* === SEZIONE DESTRA: Navigazione e Azioni === */}
+            {/* Le statistiche sono state rimosse da qui */}
             <div class="flex items-center gap-2 sm:gap-4">
-              
-              {/* --- NUOVO BLOCCO STATISTICHE --- */}
-              <div class="flex items-center gap-2 text-text-main bg-surface-hover/50 rounded-lg px-3 py-1.5">
-                {/* Focus */}
-                <div class="flex items-center gap-1.5" title="Focus">
-                  <IoFlashOutline class="text-yellow-400" />
-                  <span class="font-mono text-sm font-bold">{p.focus}</span>
-                </div>
-                {/* Separatore */}
-                <div class="w-[1px] h-4 bg-border/50 mx-1"></div>
-                {/* Resilience */}
-                <div class="flex items-center gap-1.5" title="Resilience">
-                  <IoShieldOutline class="text-sky-400" />
-                  <span class="font-mono text-sm font-bold">{p.resilience}</span>
-                </div>
-                {/* Acumen */}
-                <div class="flex items-center gap-1.5" title="Acumen">
-                  <IoDiscOutline class="text-purple-400" />
-                  <span class="font-mono text-sm font-bold">{p.acumen}</span>
-                </div>
-                {/* Curiosity */}
-                <div class="flex items-center gap-1.5" title="Curiosity">
-                  <IoSearchOutline class="text-green-400" />
-                  <span class="font-mono text-sm font-bold">{p.curiosity}</span>
-                </div>
-                {/* Concentration */}
-                <div class="flex items-center gap-1.5" title="Concentration">
-                  <IoEyeOutline class="text-red-400" />
-                  <span class="font-mono text-sm font-bold">{p.concentration}</span>
-                </div>
+              <div class="flex items-center gap-2 bg-surface-hover/50 rounded-lg p-1">
+                <A href="/game/dashboard" class="btn-icon" title="Dashboard" classList={{ 'bg-primary/20 text-primary': location.pathname.includes('/dashboard') }}>
+                  <IoGridOutline />
+                </A>
+                <A href="/game/profile" class="btn-icon" title="Profilo" classList={{ 'bg-primary/20 text-primary': location.pathname.includes('/profile') }}>
+                  <IoTerminalOutline />
+                </A>
+                <A href="/game/paradoxes" class="btn-icon" title="Paradossi" classList={{ 'bg-primary/20 text-primary': location.pathname.includes('/paradoxes') }}>
+                  <IoGitNetworkOutline />
+                </A>
               </div>
-
-              {/* Theme Switcher */}
-              <button
-                onClick={() => themeStoreActions.toggleTheme()}
-                class="btn-icon"
-                title="Toggle Theme"
-              >
-                <Show when={themeStore.theme === 'dark'} fallback={<IoSunnyOutline />}>
-                  <IoMoonOutline />
-                </Show>
-              </button>
-
-              {/* Logout Button */}
-              <button onClick={() => gameStoreActions.signOut()} class="btn-icon !text-error/80 hover:!text-error" title="Logout">
-                <IoLogOutOutline />
-              </button>
+              
+              <div class="flex items-center gap-2">
+                <button onClick={() => themeStoreActions.toggleTheme()} class="btn-icon" title="Cambia Tema">
+                  <Show when={themeStore.theme === 'dark'} fallback={<IoSunnyOutline />}><IoMoonOutline /></Show>
+                </button>
+                <button onClick={() => gameStoreActions.signOut()} class="btn-icon !text-error/80 hover:!text-error" title="Logout">
+                  <IoLogOutOutline />
+                </button>
+              </div>
             </div>
           </>
         )}
