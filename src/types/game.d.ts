@@ -37,5 +37,6 @@ export type SubmitSolutionResult = {
   updatedProfile?: ProfileUser;
   error?: string;
   details?: boolean[];
-  droppedItem?: DroppedItem | null; // Aggiunta la proprietà opzionale per il drop
+  droppedItem?: DroppedItem | null; 
+  achievementUnlocked?: { title: string } | null;
 };

@@ -166,6 +166,9 @@ export const signOutUser = async () => {
 /**
  * Fetches the data for a single paradox step.
  */
+/**
+ * Fetches the data for a single paradox step.
+ */
 export const getParadoxStep = async (stepId: number) => {
   const event = getRequestEvent();
   if (!event?.locals.user) {
@@ -181,7 +184,10 @@ export const getParadoxStep = async (stepId: number) => {
 
   if (error) {
     console.error(`Database error fetching paradox step #${stepId}:`, error);
-    return { success: false, error: "Could not load the paradox step." };
+    // --- MODIFICA CHIAVE QUI ---
+    // Invece di un messaggio generico, restituiamo l'errore reale di Supabase.
+    // In questo modo, lo store potrà leggerne il codice.
+    return { success: false, error: `Code: ${error.code} - ${error.message}` };
   }
 
   return { success: true, data };
@@ -196,7 +202,7 @@ export const getParadoxStep = async (stepId: number) => {
 export const submitParadoxSolution = async (
   stepId: number, 
   submittedSolutions: string[]
-): Promise<SubmitSolutionResult> => { // Tipo di ritorno specificato
+): Promise<SubmitSolutionResult> => {
   const event = getRequestEvent();
   if (!event?.locals.user) {
     return { success: false, error: "Not authenticated." };
@@ -224,25 +230,20 @@ export const submitParadoxSolution = async (
 
   if (isCorrect) {
     let droppedItem = null;
-    const dropChance = 0.25; // '0.25 MODIFICO IL DROPRATE @ 1
+    let achievementUnlocked = null;
+    
+    // ... (la logica di drop rimane invariata)
+    const dropChance = 0.25;
     if (Math.random() < dropChance) {
       const rarityRoll = Math.random();
       let determinedRarity = 'COMMON';
       if (rarityRoll < 0.05) determinedRarity = 'EPIC';
       else if (rarityRoll < 0.25) determinedRarity = 'RARE';
-
-      const { data: potentialDrops } = await supabase
-        .from('game_items')
-        .select('id, name, rarity, asset_url')
-        .eq('season_id', stepData.season_id)
-        .eq('rarity', determinedRarity)
-        .eq('item_type', 'AVATAR');
-
+      const { data: potentialDrops } = await supabase.from('game_items').select('id, name, rarity, asset_url').eq('season_id', stepData.season_id).eq('rarity', determinedRarity).eq('item_type', 'AVATAR');
       if (potentialDrops && potentialDrops.length > 0) {
         const { data: userInventory } = await supabase.from('inventory').select('item_id').eq('owner_id', userId);
         const ownedItemIds = userInventory ? userInventory.map(i => i.item_id) : [];
         const newPossibleDrops = potentialDrops.filter(drop => !ownedItemIds.includes(drop.id));
-
         if (newPossibleDrops.length > 0) {
           const chosenDrop = newPossibleDrops[Math.floor(Math.random() * newPossibleDrops.length)];
           const { error: insertError } = await supabase.from('inventory').insert({ owner_id: userId, item_id: chosenDrop.id });
@@ -251,11 +252,45 @@ export const submitParadoxSolution = async (
       }
     }
 
+    // === MODIFICA CHIAVE QUI ===
+    const { count: totalStepsInSeason, error: countError } = await supabase
+      .from('paradox_steps')
+      .select('*', { count: 'exact', head: true })
+      .eq('season_id', stepData.season_id);
+
+    // Se c'è un errore nel conteggio, usiamo un valore sicuro
+    const totalSteps = countError ? 0 : totalStepsInSeason;
+    
+    // Controlliamo se il livello APPENA COMPLETATO è l'ultimo
+    const isFinalStep = stepId === totalSteps;
+
+    if (isFinalStep) {
+      const { data: seasonData } = await supabase
+        .from('paradox_seasons')
+        .select('achievement_title')
+        .eq('id', stepData.season_id)
+        .single();
+      
+      if (seasonData && seasonData.achievement_title) {
+        const { error: achievementError } = await supabase
+          .from('unlocked_achievements')
+          .insert({ user_id: userId, season_id: stepData.season_id });
+        
+        if (!achievementError) {
+          achievementUnlocked = { title: seasonData.achievement_title };
+        }
+      }
+    }
+
+    // Aggiorniamo sempre il progresso, anche dopo l'ultimo step.
+    // Il nuovo step_id sarà uno in più del numero totale di livelli.
+    const nextStepId = stepId + 1;
+
     const { data: updatedProfile, error: updateError } = await supabase
       .from('profiles')
       .update({
-        current_step_id: stepId + 1,
-        max_step_reached: Math.max(profile.max_step_reached, stepId + 1),
+        current_step_id: nextStepId, // <-- SEMPRE stepId + 1
+        max_step_reached: Math.max(profile.max_step_reached, nextStepId),
         acumen: profile.acumen + (stepData.reward_acumen || 0),
         concentration: profile.concentration + (stepData.reward_concentration || 0),
         curiosity: profile.curiosity + (stepData.reward_curiosity || 0),
@@ -263,35 +298,21 @@ export const submitParadoxSolution = async (
         last_focus_update: new Date().toISOString(),
       })
       .eq('id', userId)
-      .select('*, inventory(*, game_items(*))') // Chiediamo il profilo completo
+      .select('*, inventory(*, game_items(*))')
       .single();
 
     if (updateError || !updatedProfile) {
       return { success: false, error: "Error updating profile." };
     }
     
-    return { success: true, outcome: 'correct', updatedProfile: updatedProfile as ProfileUser, droppedItem };
+    return { success: true, outcome: 'correct', updatedProfile: updatedProfile as ProfileUser, droppedItem, achievementUnlocked };
+
   } else {
-    const { data: updatedProfile, error: updateError } = await supabase
-      .from('profiles')
-      .update({ focus: Math.max(0, profile.focus - 5), last_focus_update: new Date().toISOString() })
-      .eq('id', userId)
-      .select('*, inventory(*, game_items(*))') // Chiediamo il profilo completo
-      .single();
-
-    if (updateError || !updatedProfile) {
-      return { success: false, error: "Error updating profile." };
-    }
-    
+    // ... (la logica di fallimento rimane invariata)
+    const { data: updatedProfile, error: updateError } = await supabase.from('profiles').update({ focus: Math.max(0, profile.focus - 5), last_focus_update: new Date().toISOString() }).eq('id', userId).select('*, inventory(*, game_items(*))').single();
+    if (updateError || !updatedProfile) { return { success: false, error: "Error updating profile." }; }
     const validationDetails = stepData.solutions.map((sol, i) => sol === submittedSolutions[i]);
-    
-    return { 
-      success: false, 
-      outcome: 'incorrect', 
-      error: "Incorrect sequence.", 
-      details: validationDetails,
-      updatedProfile: updatedProfile as ProfileUser,
-    };
+    return { success: false, outcome: 'incorrect', error: "Incorrect sequence.", details: validationDetails, updatedProfile: updatedProfile as ProfileUser };
   }
 };
 
@@ -446,4 +467,62 @@ export const getCurrentMissionInfo = async () => {
     currentStepNumber: stepInfo.id,
     totalStepsInSeason: countError ? 0 : count,
   };
+};
+
+
+/**
+ * Recupera i dati per la pagina del profilo, inclusi gli achievement.
+ */
+export const getProfilePageData = async () => {
+  const event = getRequestEvent();
+  if (!event?.locals.user) return null;
+
+  const supabase = createClient();
+  const userId = event.locals.user.id;
+
+  // Prendiamo tutte le stagioni e, per ognuna, controlliamo se c'è un achievement sbloccato
+  const { data: seasons, error } = await supabase
+    .from('paradox_seasons')
+    .select(`
+      *,
+      unlocked_achievements (
+        user_id
+      )
+    `)
+    .eq('unlocked_achievements.user_id', userId);
+
+  if (error) {
+    console.error("Error fetching profile page data:", error);
+    return null;
+  }
+  return seasons;
+};
+
+
+/**
+ * Aggiorna il titolo attivo dell'utente nel suo profilo.
+ * @param newTitle Il nuovo titolo da equipaggiare.
+ */
+export const equipAchievementTitle = async (newTitle: string | null) => {
+  const event = getRequestEvent();
+  if (!event?.locals.user) {
+    return { success: false, error: "Not authenticated." };
+  }
+
+  const supabase = createClient();
+  const userId = event.locals.user.id;
+
+  const { data: updatedProfile, error } = await supabase
+    .from('profiles')
+    .update({ active_title: newTitle })
+    .eq('id', userId)
+    .select() // Selezioniamo il profilo aggiornato
+    .single();
+
+  if (error || !updatedProfile) {
+    console.error("Database error equipping title:", error);
+    return { success: false, error: "Impossibile aggiornare il titolo." };
+  }
+
+  return { success: true, profile: updatedProfile as ProfileUser };
 };

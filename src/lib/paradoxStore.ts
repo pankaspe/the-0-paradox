@@ -36,6 +36,7 @@ interface ParadoxStore {
   isDecrypted: boolean;
   interactionLog: InteractionLog[];
   successfulOutcomeText: string | null;
+  isSeasonCompleted: boolean;
 }
 
 // --- STORE DEFINITION ---
@@ -48,6 +49,7 @@ const [store, setStore] = createStore<ParadoxStore>({
   isDecrypted: false,
   interactionLog: CONSOLE_WELCOME_MESSAGE,
   successfulOutcomeText: null,
+  isSeasonCompleted: false
 });
 
 // --- STORE ACTIONS ---
@@ -60,6 +62,7 @@ const actions = {
     }
     setStore("isLoading", true);
     setStore("currentStep", null);
+    setStore("isSeasonCompleted", false);
     
     const stepId = gameStore.profile.current_step_id;
     const result = await getParadoxStep(stepId);
@@ -75,9 +78,18 @@ const actions = {
       setStore("isLoading", false);
       setStore("error", null);
     } else {
-      setStore("error", result.error || "Failed to load paradox step.");
-      setStore("isLoading", false);
+      // --- MODIFICA CHIAVE QUI ---
+      // Controlliamo se l'errore è quello che ci aspettiamo
+      if (result.error?.includes('PGRST116')) {
+        // Questo non è un errore, ma la fine della stagione!
+        setStore("isSeasonCompleted", true);
+        setStore("error", null);
+      } else {
+        // Questo è un vero errore
+        setStore("error", result.error || "Failed to load paradox step.");
+      }
     }
+    setStore("isLoading", false);
   },
   
   async submitSolution(solutions: (string | null)[]) {
@@ -97,6 +109,13 @@ const actions = {
 
     if (result.success) {
       const droppedItem = result.droppedItem;
+      const achievement = result.achievementUnlocked;
+      if (achievement) {
+        setTimeout(() => {
+          gameStoreActions.showToast(`🏆 Titolo Sbloccato: [${achievement.title}]!`, "success");
+        }, droppedItem ? 1500 : 500); // Ritardo maggiore se c'è un drop
+      }
+
       if (droppedItem) {
         gameStoreActions.showDropModal(droppedItem);
       }

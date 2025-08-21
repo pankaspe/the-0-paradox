@@ -6,6 +6,7 @@ import {
   getInitialGameState,
   signOutUser,
   equipAvatar,
+  equipAchievementTitle,
 } from "./game-actions";
 
 import { themeStoreActions } from "./themeStore";
@@ -137,6 +138,22 @@ const actions = {
 
     // setStore("isSubmitting", false); // Disattiva lo stato di caricamento
   },
+
+
+async equipTitle(newTitle: string | null) {
+  if (!store.profile) return;
+
+  // Non usiamo un aggiornamento ottimistico per la stessa ragione degli avatar
+  const result = await equipAchievementTitle(newTitle);
+
+  if (result.success && result.profile) {
+    // Sostituiamo il vecchio profilo con quello nuovo e completo
+    this.updateProfile(result.profile);
+    this.showToast("Titolo equipaggiato!", "success");
+  } else {
+    this.showToast(result.error || "Errore durante l'aggiornamento.", "error");
+  }
+},
 
   /**
    * Signs out the user by calling the server action.
