@@ -104,16 +104,23 @@ export const equipAvatar = async (avatarId: string) => {
   }
 
   const supabase = createClient();
-  const { error } = await supabase
+  const userId = event.locals.user.id;
+
+  // Eseguiamo l'update e concateniamo .select() per ottenere la riga aggiornata
+  const { data: updatedProfile, error } = await supabase
     .from('profiles')
     .update({ active_avatar_id: avatarId })
-    .eq('id', event.locals.user.id);
+    .eq('id', userId)
+    .select('*, inventory(*, game_items(*))') // <-- CHIAVE: Chiediamo il profilo completo
+    .single();
 
-  if (error) {
+  if (error || !updatedProfile) {
     console.error("Database error equipping avatar:", error);
-    return { success: false, error: "Database error: " + error.message };
+    return { success: false, error: "Database error: " + (error?.message || "Profile not found") };
   }
-  return { success: true };
+
+  // Restituiamo il successo e il nuovo profilo
+  return { success: true, profile: updatedProfile as ProfileUser };
 };
 
 /**
@@ -267,7 +274,7 @@ export const submitParadoxSolution = async (
   } else {
     const { data: updatedProfile, error: updateError } = await supabase
       .from('profiles')
-      .update({ focus: Math.max(0, profile.focus - 10), last_focus_update: new Date().toISOString() })
+      .update({ focus: Math.max(0, profile.focus - 5), last_focus_update: new Date().toISOString() })
       .eq('id', userId)
       .select('*, inventory(*, game_items(*))') // Chiediamo il profilo completo
       .single();

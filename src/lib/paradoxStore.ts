@@ -4,7 +4,6 @@ import { gameStore, gameStoreActions } from "./gameStore";
 import type { ProfileUser, SubmitSolutionResult } from "~/types/game";
 
 // --- TYPE DEFINITIONS ---
-
 export interface ParadoxStep {
   id: number;
   title: string;
@@ -22,8 +21,8 @@ export type InteractionLog = {
 };
 
 const CONSOLE_WELCOME_MESSAGE: InteractionLog[] = [
-  { type: 'outcome', text: 'Kernel v0.0.1 :: PARADOX os' },
-  { type: 'outcome', text: 'Status 200. Interagisci con gli elementi evidenziati nell\'ambiente per raccogliere indizi.' }
+  { type: 'outcome', text: 'Kernel v0.0.1 :: PARADOX OS' },
+  { type: 'outcome', text: 'Inizializzazione completata. Interagisci con gli elementi evidenziati nell\'ambiente per raccogliere indizi.' }
 ];
 
 interface ParadoxStore {
@@ -34,9 +33,8 @@ interface ParadoxStore {
   validationDetails: boolean[] | null; 
   isDecrypted: boolean;
   interactionLog: InteractionLog[];
-   successfulOutcomeText: string | null;
+  successfulOutcomeText: string | null;
 }
-
 
 // --- STORE DEFINITION ---
 const [store, setStore] = createStore<ParadoxStore>({
@@ -50,12 +48,8 @@ const [store, setStore] = createStore<ParadoxStore>({
   successfulOutcomeText: null,
 });
 
-
 // --- STORE ACTIONS ---
 const actions = {
-  /**
-   * Fetches the current paradox step data from the server based on the user's profile.
-   */
   async loadCurrentStep() {
     if (!gameStore.profile) {
       setStore("error", "User profile not loaded. Cannot fetch step.");
@@ -83,11 +77,8 @@ const actions = {
       setStore("isLoading", false);
     }
   },
-
-  /**
-   * Submits the user's proposed solution to the server for validation.
-   */
- async submitSolution(solutions: (string | null)[]) {
+  
+  async submitSolution(solutions: (string | null)[]) {
     if (!store.currentStep || store.isSubmitting) return;
     if (solutions.some(s => s === null)) {
       gameStoreActions.showToast("All slots must be filled.", "error");
@@ -96,23 +87,25 @@ const actions = {
     setStore("isSubmitting", true);
     this.resetValidation();
 
-    // Non è più necessario specificare il tipo qui, perché la funzione lo "promette"
-    const result = await submitParadoxSolution(store.currentStep.id, solutions as string[]);
+    const result = await submitParadoxSolution(store.currentStep!.id, solutions as string[]);
     
     if (result.updatedProfile) {
       gameStoreActions.updateProfile(result.updatedProfile);
     }
 
     if (result.success) {
-      const outcomeMessage = store.currentStep?.outcome_text || "Sequenza stabilizzata. Sincronizzazione...";
-      setStore("successfulOutcomeText", outcomeMessage);
-
       const droppedItem = result.droppedItem;
       if (droppedItem) {
-        gameStoreActions.showDropModal(droppedItem);;
+        gameStoreActions.showDropModal(droppedItem);
       }
+      
+      const outcomeMessage = store.currentStep?.outcome_text || "Sequenza stabilizzata. Evoluzione in corso...";
+      setStore("successfulOutcomeText", outcomeMessage);
 
-      setTimeout(() => this.loadCurrentStep(), 2500);
+      // --- MODIFICA CHIAVE QUI ---
+      // RIMOSSO: setTimeout(() => this.loadCurrentStep(), 2500);
+      // Ora non succede nulla finché l'utente non preme "Procedi".
+
     } else {
       gameStoreActions.showToast(result.error || "Incorrect sequence.", "error");
       if (result.details) {
@@ -122,7 +115,7 @@ const actions = {
     setStore("isSubmitting", false);
   },
 
-    /**
+  /**
    * Nasconde il modal di outcome e carica il prossimo livello.
    */
   proceedToNextStep() {
@@ -130,19 +123,12 @@ const actions = {
     this.loadCurrentStep();
   },
 
-  /**
-   * Gestisce l'interazione narrativa.
-   */
   async handleInteraction(target: string, command: string) {
     if (!store.currentStep) return;
-
     setStore("interactionLog", prev => [...prev, { type: 'command', text: `${command} ${target}` }]);
-
     const result = await performInteraction(store.currentStep.id, target, command);
-    
     if (result.success) {
       setStore("interactionLog", prev => [...prev, { type: 'outcome', text: result.outcome_text! }]);
-      
       if (result.reveals_key) {
         setStore("isDecrypted", true);
         gameStoreActions.showToast("Intuizione Raggiunta. Canale Dati Decriptato.", "success");
@@ -151,10 +137,7 @@ const actions = {
       gameStoreActions.showToast(result.error || "Interferenza nel segnale.", "error");
     }
   },
-
-  /**
-   * Clears the current validation feedback state.
-   */
+  
   resetValidation() {
     setStore("validationDetails", null);
   },

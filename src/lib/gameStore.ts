@@ -119,15 +119,23 @@ const actions = {
       return;
     }
 
-    const originalAvatarId = store.profile.active_avatar_id;
-    setStore("profile", "active_avatar_id", newAvatarId);
+    // Non facciamo più l'aggiornamento ottimistico qui per evitare stati intermedi.
+    // Mostriamo un feedback di caricamento se necessario (opzionale).
+    // setStore("isSubmitting", true); // Potresti voler aggiungere uno stato di caricamento
 
     const result = await equipAvatar(newAvatarId);
-    if (!result.success) {
-      this.showToast(result.error || "Failed to equip avatar.", 'error');
-      // Revert the local state on failure
-      setStore("profile", "active_avatar_id", originalAvatarId);
+    
+    if (result.success && result.profile) {
+      // --- SOLUZIONE QUI ---
+      // Usiamo l'azione updateProfile per sostituire l'intero
+      // oggetto del profilo con quello fresco e completo dal server.
+      this.updateProfile(result.profile);
+      this.showToast("Avatar equipaggiato!", "success");
+    } else {
+      this.showToast(result.error || "Impossibile equipaggiare l'avatar.", 'error');
     }
+
+    // setStore("isSubmitting", false); // Disattiva lo stato di caricamento
   },
 
   /**
