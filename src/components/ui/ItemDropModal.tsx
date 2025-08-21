@@ -48,7 +48,7 @@ export const ItemDropModal: Component<Props> = (props) => {
           class="absolute top-2 right-2 btn-icon"
           title="Chiudi"
         >
-          <IoClose size={24} />
+          <IoClose size={4} />
         </button>
 
         <p class="font-mono text-primary tracking-widest text-sm">NUOVO OGGETTO OTTENUTO</p>
