@@ -15,9 +15,11 @@ import {
   IoSearchOutline,
   IoEyeOutline,
   IoGridOutline,
-  IoTerminalOutline,
-  IoGitNetworkOutline
+  IoGitNetworkOutline,
 } from "solid-icons/io";
+
+import { AiOutlineUser } from 'solid-icons/ai'
+
 import { Presence } from "solid-motionone";
 import { AvatarSelectionDropdown } from "./AvatarSelectionDropdown";
 import { updateUsername } from "~/lib/game-actions";
@@ -121,7 +123,7 @@ const Topbar: Component = () => {
                   <IoGridOutline />
                 </A>
                 <A href="/game/profile" class="btn-icon" title="Profilo" classList={{ 'bg-primary/20 text-primary': location.pathname.includes('/profile') }}>
-                  <IoTerminalOutline />
+                  <AiOutlineUser />
                 </A>
                 <A href="/game/paradoxes" class="btn-icon" title="Paradossi" classList={{ 'bg-primary/20 text-primary': location.pathname.includes('/paradoxes') }}>
                   <IoGitNetworkOutline />

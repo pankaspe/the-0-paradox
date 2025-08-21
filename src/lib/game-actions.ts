@@ -526,3 +526,42 @@ export const equipAchievementTitle = async (newTitle: string | null) => {
 
   return { success: true, profile: updatedProfile as ProfileUser };
 };
+
+
+/**
+ * Inizializza il profilo di un nuovo utente impostando il suo primo username.
+ * Funziona in modo simile a updateUsername ma è pensata per il flusso di onboarding.
+ * @param username L'ID Operatore scelto dall'utente.
+ */
+export const initializeProfile = async (username: string) => {
+  const event = getRequestEvent();
+  if (!event?.locals.user) {
+    return { success: false, error: "Utente non autenticato." };
+  }
+
+  // Riutilizziamo le stesse regole di validazione
+  if (!username || username.length < 3) {
+    return { success: false, error: "L'ID Operatore deve avere almeno 3 caratteri." };
+  }
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+    return { success: false, error: "L'ID Operatore può contenere solo lettere, numeri e underscore." };
+  }
+
+  const supabase = createClient();
+  const { data: updatedProfile, error } = await supabase
+    .from('profiles')
+    .update({ username: username })
+    .eq('id', event.locals.user.id)
+    .select('*, inventory(*, game_items(*))') // Chiediamo il profilo completo e aggiornato
+    .single();
+
+  if (error) {
+    if (error.code === '23505') { // Conflitto, username già preso
+      return { success: false, error: "Questo ID Operatore è già in uso." };
+    }
+    console.error("Errore nell'inizializzazione del profilo:", error);
+    return { success: false, error: "Errore del database: " + error.message };
+  }
+
+  return { success: true, profile: updatedProfile as ProfileUser };
+};

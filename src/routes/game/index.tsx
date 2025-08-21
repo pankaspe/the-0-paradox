@@ -61,7 +61,7 @@ export default function DashboardPage() {
               <Motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} class="bg-surface/50 backdrop-blur-sm border border-border/30 rounded-lg p-6">
                 <p class="text-sm text-primary tracking-widest mb-4">[ STATO OPERATORE ]</p>
                 <div class="space-y-4">
-                  <div class="flex items-center gap-3"><IoFlashOutline size={24} class="text-yellow-400" /><div><p class="font-bold text-lg">{p.focus} / 100</p><p class="text-xs text-text-main/60">Focus Attuale</p></div></div>
+                  <div class="flex items-center gap-3"><IoFlashOutline size={24} class="text-yellow-400" /><div><p class="font-bold text-lg">{p.focus} / 500</p><p class="text-xs text-text-main/60">Focus Attuale</p></div></div>
                   <div class="flex items-center gap-3"><IoShieldOutline size={24} class="text-sky-400" /><div><p class="font-bold text-lg">{p.resilience}</p><p class="text-xs text-text-main/60">Resilienza</p></div></div>
                   <div class="flex items-center gap-3"><IoDiscOutline size={24} class="text-purple-400" /><div><p class="font-bold text-lg">{p.acumen}</p><p class="text-xs text-text-main/60">Acume</p></div></div>
                   <div class="flex items-center gap-3"><IoSearchOutline size={24} class="text-green-400" /><div><p class="font-bold text-lg">{p.curiosity}</p><p class="text-xs text-text-main/60">Curiosità</p></div></div>

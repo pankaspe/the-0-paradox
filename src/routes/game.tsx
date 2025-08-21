@@ -6,6 +6,7 @@ import { Toast } from "~/components/ui/Toast";
 import Loader from "~/components/ui/Loader";
 import { Motion, Presence } from "solid-motionone";
 import { ItemDropModal } from "~/components/ui/ItemDropModal";
+import { OnboardingTutorial } from "~/components/game/layout/OnboardingTutorial";
 
 /**
  * Componente per lo sfondo animato.
@@ -53,6 +54,13 @@ export default function GameLayout(props: RouteSectionProps) {
       <div class="h-screen w-screen text-text-main flex flex-col overflow-hidden font-mono relative transition-colors duration-500">
         
         <AnimatedBackground />
+
+               {/* --- MODIFICA CHIAVE QUI --- */}
+        {/* Mostra il tutorial solo se il profilo è caricato e l'username è nullo */}
+        <Show when={gameStore.profile && gameStore.profile.username === null}>
+          <OnboardingTutorial />
+        </Show>
+        
         <Toast />
         <Topbar />
         
