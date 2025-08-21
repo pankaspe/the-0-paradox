@@ -1,24 +1,25 @@
-// src/components/ui/Loader.tsx
-import { type Component } from "solid-js";
+// in src/components/ui/Loader.tsx
 
+import { IoSyncOutline } from "solid-icons/io";
+
+// 1. Aggiungiamo 'text' alle props
 interface LoaderProps {
-  inCenter?: boolean; // Prop opzionale per centrarlo
+  inCenter?: boolean;
+  text?: string; // Prop opzionale per il testo
 }
 
-const Loader: Component<LoaderProps> = (props) => {
-  const wrapperClass = props.inCenter
-    ? "absolute inset-0 flex flex-col items-center justify-center bg-abyss/50"
-    : "flex flex-col items-center justify-center space-y-2 py-10";
-
+export default function Loader(props: LoaderProps) {
   return (
-    <div class={wrapperClass}>
-      <div class="relative flex h-10 w-10">
-        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/75 opacity-75"></span>
-        <span class="relative inline-flex rounded-full h-10 w-10 bg-primary"></span>
-      </div>
-      <p class="mt-4 text-primary/80 text-sm tracking-wider">Inizializzazione...</p>
+    <div
+      class="flex flex-col items-center justify-center gap-4 text-text-main/80"
+      classList={{
+        "absolute inset-0 z-50": props.inCenter,
+        "py-10": !props.inCenter,
+      }}
+    >
+      <IoSyncOutline size={32} class="animate-spin" />
+      {/* 2. Mostriamo il testo se viene passato */}
+      {props.text && <p class="font-mono text-sm">{props.text}</p>}
     </div>
   );
-};
-
-export default Loader;
+}

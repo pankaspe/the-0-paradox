@@ -27,6 +27,7 @@ interface GameStore {
   toast: { message: string; type: 'success' | 'error' | 'info'; id: number } | null;
   isSubmitting: boolean;
   droppedItemModal: DroppedItem | null;
+  authReady: boolean;
 }
 
 /**
@@ -39,6 +40,7 @@ const [store, setStore] = createStore<GameStore>({
   toast: null,
   isSubmitting: false,
   droppedItemModal: null,
+  authReady: false,
 });
 
 /**
@@ -52,6 +54,10 @@ let toastTimeout: ReturnType<typeof setTimeout>;
 
 const actions = {
   // --- Data and State Management ---
+
+  setAuthReady(isReady: boolean) {
+    setStore("authReady", isReady);
+  },
 
   /**
    * Asynchronously loads the initial game state from the server.

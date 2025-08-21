@@ -1,5 +1,5 @@
 import { type RouteSectionProps } from "@solidjs/router";
-import { onMount, Show, type Component } from "solid-js";
+import { createEffect, Show, type Component } from "solid-js";
 import Topbar from "~/components/game/layout/Topbar";
 import { gameStore, gameStoreActions } from "~/lib/gameStore";
 import { Toast } from "~/components/ui/Toast";
@@ -7,6 +7,7 @@ import Loader from "~/components/ui/Loader";
 import { Motion, Presence } from "solid-motionone";
 import { ItemDropModal } from "~/components/ui/ItemDropModal";
 import { OnboardingTutorial } from "~/components/game/layout/OnboardingTutorial";
+import { supabase } from "~/lib/supabase.client";
 
 /**
  * Componente per lo sfondo animato.
@@ -33,8 +34,20 @@ const AnimatedBackground: Component = () => {
  * Layout principale per tutte le schermate di gioco.
  */
 export default function GameLayout(props: RouteSectionProps) {
-  onMount(() => {
-    gameStoreActions.loadInitialData();
+
+
+  createEffect(async () => {
+    // 1. Chiediamo subito la sessione. Questo inizializza il client.
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    // 2. A PRESCINDERE dal risultato, ora sappiamo lo stato.
+    // Se c'è una sessione o no, l'autenticazione è "pronta".
+    gameStoreActions.setAuthReady(true);
+    
+    // 3. SE c'è una sessione, carichiamo i dati.
+    if (session && !gameStore.profile) {
+      gameStoreActions.loadInitialData();
+    }
   });
 
   return (
@@ -55,34 +68,35 @@ export default function GameLayout(props: RouteSectionProps) {
         
         <AnimatedBackground />
 
-               {/* --- MODIFICA CHIAVE QUI --- */}
-        {/* Mostra il tutorial solo se il profilo è caricato e l'username è nullo */}
-        <Show when={gameStore.profile && gameStore.profile.username === null}>
-          <OnboardingTutorial />
-        </Show>
-        
-        <Toast />
-        <Topbar />
-        
-        <main class="flex-1 overflow-y-auto pt-16">
-          <Show when={!gameStore.isLoading} fallback={<Loader inCenter={true} />}>
-            <Show when={!gameStore.error} fallback={<div class="p-8 text-center text-error">{gameStore.error}</div>}>
-              {props.children}
-            </Show>
+               {/* 3. La nostra logica di rendering ora ha 3 stati */}
+        <Show 
+          when={gameStore.authReady} 
+          fallback={<Loader inCenter={true} text="Verifica autorizzazione..." />}
+        >
+          {/* Se l'autenticazione è pronta, mostriamo il resto */}
+          <Show when={gameStore.profile && gameStore.profile.username === null}>
+            <OnboardingTutorial />
           </Show>
-        </main>
 
-        {/* Renderizza il modal se c'è un oggetto nello store */}
-        <Presence>
-          <Show when={gameStore.droppedItemModal}>
-            {/* 
-              Usiamo '!' (Non-null assertion operator) perché il componente
-              'Show' garantisce che gameStore.droppedItemModal non sia null qui.
-              Questo dice a TypeScript: "Fidati, so che questo valore esiste."
-            */}
-            <ItemDropModal item={gameStore.droppedItemModal!} />
-          </Show>
-        </Presence>
+          <Toast />
+          <Topbar />
+          
+          <main class="flex-1 overflow-y-auto pt-16">
+            <Show when={!gameStore.isLoading} fallback={<Loader inCenter={true} />}>
+              <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+                <Show when={!gameStore.error} fallback={<div class="p-8 text-center text-error">{gameStore.error}</div>}>
+                  {props.children}
+                </Show>
+              </Motion.div>
+            </Show>
+          </main>
+
+          <Presence>
+            <Show when={gameStore.droppedItemModal}>
+              <ItemDropModal item={gameStore.droppedItemModal!} />
+            </Show>
+          </Presence>
+        </Show>
       </div>
     </>
   );
