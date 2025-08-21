@@ -360,7 +360,17 @@ export const getParadoxSeasons = async () => {
   }
 
   const supabase = createClient();
-  const { data, error } = await supabase
+  const userId = event.locals.user.id;
+
+  // 1. Prendiamo il profilo dell'utente per sapere il suo step attuale
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('current_step_id')
+    .eq('id', userId)
+    .single();
+
+  // 2. Prendiamo tutte le stagioni disponibili
+  const { data: seasons, error } = await supabase
     .from('paradox_seasons')
     .select('*')
     .eq('is_active', true)
@@ -371,7 +381,8 @@ export const getParadoxSeasons = async () => {
     return { success: false, error: "Could not load paradox dossiers." };
   }
 
-  return { success: true, data };
+  // 3. Restituiamo sia le stagioni che lo step attuale del profilo
+  return { success: true, data: { seasons, current_step_id: profile?.current_step_id || 1 } };
 };
 
 /**
@@ -436,7 +447,6 @@ export const getCurrentMissionInfo = async () => {
 
   if (!profile) return null;
 
-  // Eseguiamo una query che unisce i dati dello step con quelli della sua stagione
   const { data: stepInfo, error } = await supabase
     .from('paradox_steps')
     .select(`
@@ -455,7 +465,6 @@ export const getCurrentMissionInfo = async () => {
     return null;
   }
 
-  // Contiamo quanti step ci sono in totale in quella stagione per la barra di progresso
   const { count, error: countError } = await supabase
     .from('paradox_steps')
     .select('*', { count: 'exact', head: true })
@@ -463,6 +472,7 @@ export const getCurrentMissionInfo = async () => {
 
   return {
     seasonTitle: (stepInfo.paradox_seasons as any).title,
+    seasonId: (stepInfo.paradox_seasons as any).id, // <-- CORREZIONE: Aggiunto questo campo
     currentStepTitle: stepInfo.title,
     currentStepNumber: stepInfo.id,
     totalStepsInSeason: countError ? 0 : count,
