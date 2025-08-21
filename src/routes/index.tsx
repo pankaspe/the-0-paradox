@@ -6,18 +6,17 @@ import { IoMoonOutline, IoSunnyOutline } from "solid-icons/io";
 
 // 1. Contenuti in Italiano, aggiornati per la nuova lore e la citazione.
 const content = {
-  title: "PARADOX OS",
+  title: "PARADOX 0",
   subtitle: "Interfaccia di Stabilizzazione Temporale",
   paragraph1: "Non sei un eroe. Sei un Operatore. Hai il compito di analizzare e risolvere le anomalie che minacciano il tessuto della realtà.",
-  paragraph2: "Ogni Paradosso è un dossier: un evento storico corrotto, un'eco da stabilizzare. Il tuo intelletto è lo strumento. L'intuizione, la tua guida.",
+  paragraph2: "Il tuo intelletto è lo strumento. L'intuizione, la tua guida.",
   cta: "Accedi al Terminale",
   footer: "Protocollo Attivo. Connessione Stabile.",
 };
 
 // NUOVO: Oggetto per la citazione e la spiegazione di Gemini
 const quote = {
-  text: "Questo non è un semplice progetto, ma un esperimento. The 0 Paradox è il risultato di una simbiosi creativa tra l'intelletto humano, come architetto e supervisore e Gemini, una IA multimodale e LLM (Large Language Model) avanzato di Google, come programmatore. Un kernel interamente scritto dall'intelligenza artificiale per un'esperienza di sviluppo procedurale, infinita e coerente.",
-  author: "Andrea",
+  text: "Questo progetto è una challenge personale: The 0 Paradox nasce dalla collaborazione tra l’ingegno umano, come architetto e supervisore, e Gemini, l’IA multimodale e LLM avanzato di Google, come programmatore. Il risultato è un kernel interamente scritto dall’intelligenza artificiale, pensato per offrire un’esperienza di sviluppo procedurale, infinita e coerente."
 };
 
 // 2. NUOVO: Componente per lo Sfondo Animato
@@ -65,16 +64,15 @@ const AnimatedText: Component<{ text: string, class?: string }> = (props) => {
 };
 
 // NUOVO: Componente per la citazione animata
-const Quote: Component<{ text: string, author: string }> = (props) => {
+const Quote: Component<{ text: string }> = (props) => {
   return (
     <Motion.div
-      class="max-w-2xl mt-12 text-md text-text-muted/80 leading-relaxed font-italic"
+      class="max-w-2xl mt-12 text-sm text-text-muted/80 leading-relaxed font-italic"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 1.5, delay: 1.5 }}
     >
       <p>"{props.text}"</p>
-      <p class="mt-2 text-sm text-text-muted/60">— {props.author}</p>
     </Motion.div>
   );
 };
@@ -167,7 +165,7 @@ export default function HomePage() {
           </div>
 
           {/* NUOVO: Inserimento della citazione */}
-          <Quote text={quote.text} author={quote.author} />
+          <Quote text={quote.text} />
 
           <Motion.div
             class="max-w-2xl mt-12 text-lg text-text-main/90 leading-relaxed"
