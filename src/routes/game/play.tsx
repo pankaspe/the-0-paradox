@@ -20,7 +20,29 @@ export default function ParadoxPlayPage() {
   // --- MEMOS & EFFECTS (invariati) ---
   const encryptedText = createMemo(() => { const step = paradoxStore.currentStep as any; return step?.encryption_data?.encrypted_text || "##### ERROR #####"; });
   const puzzleParts = createMemo(() => { const step = paradoxStore.currentStep; if (!step) return { parts: [], solutionLength: 0 }; return { parts: step.core_text.split('[_____]'), solutionLength: step.solutions.length }; });
-  const availableFragments = createMemo(() => { if (!paradoxStore.isDecrypted) return []; const step = paradoxStore.currentStep; if (!step) return []; const used = new Set(currentSolution().filter(s => s !== null)); return step.fragments.filter(f => !used.has(f)); });
+  const availableFragments = createMemo(() => {
+    if (!paradoxStore.isDecrypted) return [];
+    const step = paradoxStore.currentStep;
+    if (!step) return [];
+
+    // 1. Contiamo quante volte ogni frammento appare nella soluzione attuale.
+    const usedCounts = new Map<string, number>();
+    for (const sol of currentSolution()) {
+      if (sol !== null) {
+        usedCounts.set(sol, (usedCounts.get(sol) || 0) + 1);
+      }
+    }
+
+    // 2. Contiamo quante volte ogni frammento appare nel pool originale.
+    const totalCounts = new Map<string, number>();
+    for (const frag of step.fragments) {
+      totalCounts.set(frag, (totalCounts.get(frag) || 0) + 1);
+    }
+    
+    // 3. Un frammento è "disponibile" se il numero di volte che l'abbiamo usato
+    //    è MINORE del numero totale di volte che è presente nel pool originale.
+    return step.fragments.filter(f => (usedCounts.get(f) || 0) < (totalCounts.get(f) || 0));
+  });
   const isSolutionComplete = createMemo(() => currentSolution().length > 0 && currentSolution().every(slot => slot !== null));
   createEffect(() => { if (paradoxStore.currentStep) { const len = paradoxStore.currentStep.solutions.length; setCurrentSolution(Array(len).fill(null)); paradoxStoreActions.resetValidation(); } });
   
@@ -55,7 +77,7 @@ export default function ParadoxPlayPage() {
             <div class="flex-grow overflow-y-auto scrollable-narrative pr-4">
               <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
                 <div class="p-6">
-                  <h1 class="text-2xl md:text-3xl text-primary font-bold tracking-wider mb-6">{`> ${paradoxStore.currentStep!.title}`}</h1>
+                  <h1 class="text-2xl md:text-3xl text-secondary font-bold tracking-wider mb-6">{`> ${paradoxStore.currentStep!.title}`}</h1>
                   <InteractiveNarrative 
                     text={paradoxStore.currentStep!.intro_text}
                     elements={(paradoxStore.currentStep as any).interactive_elements || []}
@@ -75,7 +97,7 @@ export default function ParadoxPlayPage() {
                 }}
               >
                 <Show when={paradoxStore.isDecrypted} fallback={ <p class="text-xl md:text-2xl text-text-main/50 tracking-widest select-none">{encryptedText()}</p> }>
-                  <p class="text-md md:text-xl text-text-main leading-relaxed">
+                  <p class="text-sm md:text-md text-text-main leading-relaxed">
                     <For each={puzzleParts().parts}>
                       {(part, i) => (
                         <>
@@ -97,9 +119,9 @@ export default function ParadoxPlayPage() {
             <div class="flex-shrink-0">
               <div class="border border-border/30 rounded-lg backdrop-blur-sm bg-surface/50">
                 <div class="flex items-center border-b border-border/50">
-                  <button onClick={() => setActiveTab('console')} class={`px-4 py-2 text-sm font-bold tracking-wider transition-colors border-b-2 ${activeTab() === 'console' ? 'border-primary text-primary' : 'border-transparent text-text-main/70 hover:bg-white/5'}`}>CONSOLE</button>
-                  <button onClick={() => setActiveTab('fragments')} class={`px-4 py-2 text-sm font-bold tracking-wider transition-colors border-b-2 ${activeTab() === 'fragments' ? 'border-primary text-primary' : 'border-transparent text-text-main/70 hover:bg-white/5'}`} disabled={!paradoxStore.isDecrypted}>FRAMMENTI</button>
-                  <button class="px-4 py-2 text-sm font-bold tracking-wider border-b-2 border-transparent text-text-main/40 cursor-not-allowed" disabled>SKILLS</button>
+                  <button onClick={() => setActiveTab('console')} class={`px-4 py-2 text-xs md:text-sm font-bold tracking-wider transition-colors border-b-2 ${activeTab() === 'console' ? 'border-primary text-primary' : 'border-transparent text-text-main/70 hover:bg-white/5'}`}>CONSOLE</button>
+                  <button onClick={() => setActiveTab('fragments')} class={`px-4 py-2 text-xs md:text-sm font-bold tracking-wider transition-colors border-b-2 ${activeTab() === 'fragments' ? 'border-primary text-primary' : 'border-transparent text-text-main/70 hover:bg-white/5'}`} disabled={!paradoxStore.isDecrypted}>FRAMMENTI</button>
+                  <button class="px-4 py-2 text-xs md:text-sm font-bold tracking-wider border-b-2 border-transparent text-text-main/40 cursor-not-allowed" disabled>SKILLS</button>
                 </div>
                 <div class="p-2 md:p-4">
                   <div classList={{ hidden: activeTab() !== 'console' }}><InvestigationConsole log={paradoxStore.interactionLog} /></div>
@@ -109,7 +131,7 @@ export default function ParadoxPlayPage() {
                         <div class="min-h-[100px] flex flex-wrap gap-3 items-center justify-center">
                           <For each={availableFragments()}>
                             {(fragment, i) => (
-                              <Motion.button initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: i() * 0.05 }} onClick={() => handleFragmentTap(fragment)} class="px-5 py-2 border border-primary/40 text-primary hover:bg-primary hover:text-white transition-colors duration-200">
+                              <Motion.button initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: i() * 0.05 }} onClick={() => handleFragmentTap(fragment)} class="px-5 py-2 border border-primary/40 text-primary hover:bg-primary hover:text-white transition-colors duration-200 text-xs md:text-md">
                                 {fragment}
                               </Motion.button>
                             )}

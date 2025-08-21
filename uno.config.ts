@@ -1,4 +1,3 @@
-// uno.config.ts
 import {
   defineConfig,
   presetAttributify,
@@ -11,39 +10,35 @@ import {
 } from 'unocss'
 
 export default defineConfig({
-  // Scorciatoie riutilizzabili per mantenere il codice JSX pulito
   shortcuts: {
     'btn-icon': 'flex items-center justify-center h-10 w-10 rounded-lg text-text-main/80 bg-transparent hover:bg-surface-hover transition-colors focus-visible:(outline-none ring-2 ring-primary)',
   },
   rules: [
-    // Crea la classe 'preserve-3d' che applica transform-style: preserve-3d
     ['preserve-3d', { 'transform-style': 'preserve-3d' }],
-    
-    // Crea la classe 'bg-grid-pattern' per il nostro pavimento
-    // Usa la variabile CSS --color-primary per essere consistente con il tema
     ['bg-grid-pattern', {
       'background-image': `
         linear-gradient(to right, rgb(var(--color-primary) / 0.4) 1px, transparent 1px),
         linear-gradient(to bottom, rgb(var(--color-primary) / 0.4) 1px, transparent 1px)
       `,
-      'background-size': '40px 100px', // Dimensioni che simulano la prospettiva
+      'background-size': '40px 100px',
     }],
   ],
   theme: {
     colors: {
-      // =================================================================
-      // >>> LA CORREZIONE È QUI <<<
-      // Diciamo a UnoCSS di usare la funzione rgb() con le nostre variabili.
-      // <alpha-value> è un placeholder speciale di UnoCSS che permette
-      // di usare l'opacità, es. bg-page/50. Se non specificata, è 1.
-      // =================================================================
       'page': 'rgb(var(--color-bg-page) / <alpha-value>)',
       'surface': 'rgb(var(--color-bg-surface) / <alpha-value>)',
       'surface-hover': 'rgb(var(--color-bg-surface-hover) / <alpha-value>)',
       
       'primary': 'rgb(var(--color-primary) / <alpha-value>)',
       'primary-hover': 'rgb(var(--color-primary-hover) / <alpha-value>)',
+      
+      // --- NUOVI COLORI AGGIUNTI QUI ---
+      'secondary': 'rgb(var(--color-secondary) / <alpha-value>)',
+      'secondary-hover': 'rgb(var(--color-secondary-hover) / <alpha-value>)',
 
+      'text-title': 'rgb(var(--color-text-title) / <alpha-value>)',
+      // --- FINE AGGIUNTA ---
+      
       'text-main': 'rgb(var(--color-text-main) / <alpha-value>)',
       'text-muted': 'rgb(var(--color-text-muted) / <alpha-value>)',
 
@@ -55,7 +50,6 @@ export default defineConfig({
   },
   presets: [
     presetUno({
-      // Abilita il supporto per il selettore .dark per il theming
       dark: 'class',
     }),
     presetAttributify(),
@@ -65,11 +59,9 @@ export default defineConfig({
     }),
     presetTypography(),
     presetWebFonts({
-      provider: 'google', // default
+      provider: 'google',
       fonts: {
-        // Font principale, pulito e moderno
         sans: 'Inter:400,700',
-        // Font per elementi numerici o da "codice", per un look tech
         mono: 'Source Code Pro:400,700',
       },
     }),
@@ -78,17 +70,27 @@ export default defineConfig({
     transformerDirectives(),
     transformerVariantGroup(),
   ],
-  // Regole CSS pure per definire le nostre variabili di colore per i temi
   preflights: [
     {
       getCSS: ({ theme }) => `
         :root {
-          --color-bg-page: 249 249 249; /* Grigio chiarissimo */
+          /* Colori Sfondo */
+          --color-bg-page: 249 249 249;
           --color-bg-surface: 255 255 255;
           --color-bg-surface-hover: 240 240 240;
           
-          --color-primary: 38 132 255; /* Blu vibrante */
+          /* Colori Primari (Blu) */
+          --color-primary: 38 132 255;
           --color-primary-hover: 80 155 255;
+
+          /* === NUOVE VARIABILI CSS === */
+          /* Colori Secondari (Ciano/Turchese) */
+          --color-secondary: 20 184 166; /* Teal 500 */
+          --color-secondary-hover: 13 148 136; /* Teal 600 */
+          
+          /* Colori Testo */
+          --color-text-title: 0 0 0; /* Nero puro per i titoli in tema chiaro */
+          /* === FINE NUOVE VARIABILI === */
 
           --color-text-main: 20 20 20;
           --color-text-muted: 100 100 100;
@@ -100,12 +102,23 @@ export default defineConfig({
         }
 
         .dark {
-          --color-bg-page: 18 18 18; /* Grigio quasi nero */
+          /* Colori Sfondo */
+          --color-bg-page: 18 18 18;
           --color-bg-surface: 28 28 28;
           --color-bg-surface-hover: 40 40 40;
 
-          --color-primary: 38 132 255; /* Il blu funziona bene su entrambi */
+          /* Colori Primari (Blu) */
+          --color-primary: 38 132 255;
           --color-primary-hover: 80 155 255;
+
+          /* === NUOVE VARIABILI CSS === */
+          /* Colori Secondari (Ciano/Turchese) */
+          --color-secondary: 45 212 191; /* Teal 400 */
+          --color-secondary-hover: 20 184 166; /* Teal 500 */
+          
+          /* Colori Testo */
+          --color-text-title: 255 255 255; /* Bianco puro per i titoli in tema scuro */
+          /* === FINE NUOVE VARIABILI === */
 
           --color-text-main: 235 235 235;
           --color-text-muted: 160 160 160;
@@ -118,7 +131,7 @@ export default defineConfig({
 
         @keyframes scroll-background {
           from { background-position: 0 0; }
-          to { background-position: 0 -200px; } /* Deve essere un multiplo del background-size verticale (100px * 2) per un loop perfetto */
+          to { background-position: 0 -200px; }
         }
       `,
     },

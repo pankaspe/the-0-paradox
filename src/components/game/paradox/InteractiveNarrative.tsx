@@ -52,7 +52,7 @@ export function InteractiveNarrative(props: Props) {
 
   return (
     <div>
-      <p class="text-md text-text-main/80 mx-auto leading-relaxed">
+      <p class="text-xs md:text-sm text-text-main/80 mx-auto leading-relaxed">
         <For each={parsedText()}>
           {(part) =>
             groupedElementsByKeyword().has(part) ? (
