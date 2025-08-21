@@ -22,7 +22,9 @@ export type InteractionLog = {
 
 const CONSOLE_WELCOME_MESSAGE: InteractionLog[] = [
   { type: 'outcome', text: 'Kernel v0.0.1 :: PARADOX OS' },
-  { type: 'outcome', text: 'Inizializzazione completata. Interagisci con gli elementi evidenziati nell\'ambiente per raccogliere indizi.' }
+  { type: 'outcome', text: 'Inizializzazione completata. Interagisci con gli elementi evidenziati nell\'ambiente per raccogliere indizi.' },
+  { type: 'outcome', text: '-----------' }
+
 ];
 
 interface ParadoxStore {
